@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
+*.log
+db/supabase_apply_all.sql
+# fișiere locale ale uneltelor AI (generate de un plugin), nu fac parte din proiect
+.claude/
+.claudeignore

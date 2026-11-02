@@ -1,0 +1,30 @@
+# `docker compose up` pornește aplicația. Baza de date NU e aici: e pe Supabase (DECISIONS.md D1),
+# conexiunea vine din DATABASE_URL din .env.
+# Serviciul worker (sync) se adaugă în etapa 3b.
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    env_file: .env
+    environment:
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      # imaginea slim nu are curl, deci folosim fetch-ul din Node
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 120s   # prima pornire generează fixtures
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped

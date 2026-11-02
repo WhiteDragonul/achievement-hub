@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* Culorile rarității, folosite ca bg-rarity-*, text-rarity-* etc. */
+@theme {
+  --color-rarity-ultra: #f5b301;
+  --color-rarity-very: #b46cff;
+  --color-rarity-rare: #3ba3ff;
+  --color-rarity-common: #8b95a7;
+}
+
+body {
+  @apply bg-slate-950 text-slate-100 antialiased;
+}
