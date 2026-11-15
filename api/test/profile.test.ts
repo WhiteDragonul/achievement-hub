@@ -79,3 +79,12 @@ test('Steam se leagă doar prin login Steam; tokenul de legare nu e token de acc
   // Tokenul „state” e semnat cu aceeași cheie, dar nu deschide API-ul.
   assert.equal((await call('GET', '/api/auth/me', undefined, state)).status, 401);
 });
+
+test('CORS: doar frontend-ul are voie să cheme API-ul din browser (D48)', async () => {
+  const preflight = (origin: string) => ctx.app.inject({
+    method: 'OPTIONS', url: '/api/auth/me',
+    headers: { origin, 'access-control-request-method': 'GET' },
+  });
+  assert.equal((await preflight('http://localhost:5173')).headers['access-control-allow-origin'], 'http://localhost:5173');
+  assert.equal((await preflight('https://site-strain.example')).headers['access-control-allow-origin'], undefined);
+});

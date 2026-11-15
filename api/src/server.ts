@@ -1,5 +1,7 @@
 import Fastify from 'fastify';
+import cors from '@fastify/cors';
 import { sql } from 'kysely';
+import { config } from './config.js';
 import { db } from './db/db.js';
 import { authenticate, requireRole } from './auth.js';
 import { errorHandler } from './errors.js';
@@ -21,6 +23,10 @@ import { viewsRoutes } from './routes/views.js';
 export function buildServer({ logger = true } = {}) {
   const app = Fastify({ logger });
   app.setErrorHandler(errorHandler);
+
+  // Frontend-ul de pe GitHub Pages (WEB_URL) cheamă API-ul de pe alt domeniu, deci browserul cere CORS (D48).
+  // Permitem doar originea frontend-ului și serverul Vite local, nu orice site.
+  app.register(cors, { origin: [new URL(config.webUrl).origin, 'http://localhost:5173'] });
 
   // Verifică și conexiunea la DB, nu doar că procesul rulează (folosit de healthcheck-ul din Docker Compose).
   app.get('/health', async () => {

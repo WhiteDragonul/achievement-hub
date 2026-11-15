@@ -268,3 +268,11 @@ link-ul profilului în loc de SteamID64. Acum `POST /auth/steam/link` dă un tok
 API-ul află din state cui îi leagă SteamID-ul confirmat de Steam. Tokenul are `purpose`, deci `verifyAccessToken`
 îl respinge: nu poate fi folosit ca token de acces. După legare (și la primul login Steam) se pornește automat un sync.
 Sync-ul Steam ia acum până la 250 de jocuri deținute (și cele neîncepute), câte 6 în paralel.
+
+**D48 — Prezentarea de pe telefon: frontend pe GitHub Pages, API prin tunel Cloudflare de pe laptop.**
+GitHub Pages găzduiește doar fișiere statice, deci acolo stă doar `web/` (workflow `.github/workflows/pages.yml`,
+`--base=/achievement-hub/`, `404.html` = `index.html` ca rutele React să meargă la reîncărcare). API-ul, worker-ul și baza
+rămân pe laptop; `scripts/present.mjs` pornește un „quick tunnel” Cloudflare (gratuit, fără cont) care dă o adresă https
+publică, o pune în variabila de repo `API_URL` și republică frontend-ul. Alternativa (Render + Supabase) ar fi mers și cu
+laptopul închis, dar cere un cont nou și are pornire la rece de ~30 s. Fiind pe alt domeniu, API-ul acceptă acum CORS,
+doar de la originea din `WEB_URL` și de la Vite local. Pages gratuit cere repo public: `.env` (cheile) nu e în repo.

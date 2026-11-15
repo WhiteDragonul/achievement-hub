@@ -45,6 +45,15 @@ Interfața: http://localhost:5173 (Vite trimite cererile `/api` către API-ul de
 Comenzi utile (în `api/`): `npm test`, `npm run db:migrate`, `npm run db:seed`, `npm run db:explain` (EXPLAIN ANALYZE
 înainte/după pentru indecși), `npm run typecheck`. Load test: `k6 run loadtest/api.js` ([docs/loadtest.md](docs/loadtest.md)).
 
+## Prezentare de pe telefon (GitHub Pages)
+Frontend: https://whitedragonul.github.io/achievement-hub/ — API-ul rulează pe laptop, expus printr-un tunel Cloudflare (D48).
+Cu baza de date pornită și API-ul / worker-ul locale oprite (folosesc portul 3000):
+```bash
+node scripts/present.mjs
+```
+Scriptul setează `API_URL` în repo și republică Pages (~1 min, `gh run watch`). Adresa tunelului se schimbă la fiecare
+pornire, deci scriptul se rulează din nou înainte de fiecare prezentare.
+
 ## Structură
 
 | Folder | Conținut |

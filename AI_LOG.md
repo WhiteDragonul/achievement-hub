@@ -134,3 +134,8 @@ jocurile. să-mi pot da customize la profil.” (plus o captură: sync-ul rămâ
 (3 noi în `profile.test.ts`). Baza locală curățată de fixtures; verificat în browser: editarea profilului și redirectul la Steam.
 **Neverificat:** sync-ul Steam real (lipsește `STEAM_API_KEY`); migrația 009 pe Supabase.
 **Cauza „queued”:** worker-ul nu rula; chiar pornit, sync-ul ar fi eșuat (fără cheie Steam, iar id-ul era un URL, nu SteamID64).
+
+## GitHub + GitHub Pages pentru prezentare (2026-11-15)
+**Prompt:** „dă-i commit, push pe GitHub și după fă GitHub Pages ca să pot accesa și de pe telefon pentru prezentare.”
+**Rezultat:** commit + push; repo public; Pages activat (workflow); CORS în API (`@fastify/cors`, test nou); router cu
+`basename`; `scripts/present.mjs` (tunel Cloudflare → `API_URL` → redeploy Pages → API + worker). Decizie D48.

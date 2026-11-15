@@ -16,6 +16,7 @@
     "user:role": "node --env-file=../.env --import tsx src/cli/set-role.ts"
   },
   "dependencies": {
+    "@fastify/cors": "^11.4.3",
     "argon2": "^0.45.1",
     "dejavu-fonts-ttf": "^2.37.3",
     "exceljs": "^4.4.0",
