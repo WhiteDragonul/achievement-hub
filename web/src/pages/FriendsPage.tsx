@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type Friendship, type User } from '../api';
-import { useCurrentUser } from '../current-user';
+import { useCurrentUser } from '../auth';
 import { Button, Card, ErrorMessage, Input, Loading, PageTitle } from '../components/ui';
 
 export function FriendsPage() {
@@ -45,7 +45,7 @@ export function FriendsPage() {
       <Card className="mb-6">
         <h2 className="mb-3 font-semibold">Adaugă un prieten</h2>
         <Input placeholder="Caută după username…" value={search} onChange={(event) => setSearch(event.target.value)} />
-        <ul className="mt-2 divide-y divide-slate-800">
+        <ul className="mt-2 divide-y divide-white/10">
           {results.data?.filter((user) => user.id !== userId).map((user) => (
             <li key={user.id} className="flex items-center justify-between py-2">
               <span>@{user.username}</span>
@@ -86,7 +86,7 @@ export function FriendsPage() {
             </Button>
           </FriendRow>
         ))}
-        {friends.length === 0 && <p className="px-4 py-3 text-sm text-slate-400">Încă nu ai prieteni.</p>}
+        {friends.length === 0 && <p className="px-4 py-3 text-sm text-white/55">Încă nu ai prieteni.</p>}
       </Section>
     </>
   );
@@ -96,7 +96,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <>
       <h2 className="mb-3 text-lg font-semibold">{title}</h2>
-      <Card className="mb-6 p-0"><ul className="divide-y divide-slate-800">{children}</ul></Card>
+      <Card className="mb-6 p-0"><ul className="divide-y divide-white/10">{children}</ul></Card>
     </>
   );
 }
@@ -104,7 +104,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function FriendRow({ id, username, children }: { id: number; username: string; children: React.ReactNode }) {
   return (
     <li className="flex flex-wrap items-center gap-2 px-4 py-3">
-      <Link to={`/users/${id}`} className="flex-1 font-medium hover:text-indigo-300">@{username}</Link>
+      <Link to={`/users/${id}`} className="flex-1 font-medium hover:text-sky-300">@{username}</Link>
       {children}
     </li>
   );

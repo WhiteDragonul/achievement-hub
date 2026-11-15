@@ -92,3 +92,45 @@ la lățime de telefon (375px) și desktop, fără erori în consolă. Pe telefo
 **Rezultat:** `docs/AchievementHub-Etape.docx` (16 pagini): stadiul proiectului, tehnologii, pornire, etapele 0–2 explicate
 (decizii, constrângeri, fixtures, API, pagini cu capturi), scenarii de demonstrație, întrebări probabile, ce urmează.
 Verificat prin export PDF din Word și inspectarea paginilor.
+
+## Etapele 3, 3b, 4, 5 + interfața Liquid Glass (2026-11-15)
+**Prompt:** „continuă, termină tot proiectul, fă-i o interfață Apple Liquid Glass”.
+**Rezultat:**
+- **Etapa 3 — autentificare:** `api/src/auth.ts` (JWT HS256 cu `node:crypto`, refresh token cu hash sha256, rotație și
+  detectarea refolosirii), `routes/auth.ts` (register / login / refresh / logout / me), reguli pe roluri în toate rutele
+  CRUD (D31–D35). Web: pagina de login, sesiunea în `auth.tsx`, refresh automat la 401; selectorul „Acționezi ca” a dispărut.
+- **Etapa 3b — sync:** `api/src/sync/` — `AchievementProvider`, `SteamProvider` (Steam Web API), `MockProvider`,
+  scrierea într-o tranzacție cu UPSERT; coada pg-boss + `worker.ts` (serviciu nou în docker-compose); login Steam
+  OpenID (`routes/steam-auth.ts`) (D36–D38).
+- **Etapa 5 — rapoarte:** `routes/exports.ts` — CSV cu `COPY … TO STDOUT` (stream), Excel cu exceljs, PDF cu pdfkit
+  (D39–D41); butoane în Profil și Admin.
+- **Etapa 4 — performanță:** migrațiile `007_indexes.sql` (3 indecși) și `008_leaderboard_view.sql` (materialized view
+  pentru clasament, reîmprospătat de worker), scriptul `npm run db:explain`, `docs/indexes.md`; scriptul k6
+  `loadtest/api.js` și `docs/loadtest.md` (D43–D44).
+- **Interfață:** stil „Liquid Glass” — utilitarele `glass*` în `web/src/index.css`, sidebar / tab-bar plutitoare cu bulă
+  care alunecă, control segmentat, fundal „aurora” animat (D42). Butoanele nepermise rolului curent sunt ascunse.
+- Documentație: `docs/api.md` (autentificare, roluri, rapoarte), `docs/pagini.md` (Login, roluri), `docs/prezentare.md`
+  (secțiunile 3–5), README.
+**Verificare:** typecheck API + web OK; 21/21 teste (7 noi pentru auth / roluri, 1 sync, 1 rapoarte). Aplicația completă
+(API + worker + web) a rulat pe un Postgres 18 local cu fixtures (5.003 useri, 638.642 deblocări): login ca admin și ca
+demo, sync PSN prin coadă → `succeeded` și profilul actualizat, paginile pe desktop și pe telefon (375px), fără erori în
+consolă; CSV / Excel / PDF descărcate și verificate. Măsurătorile din `docs/indexes.md` sunt de pe acest Postgres local.
+**Neverificat:** rularea pe Supabase (lipsește `.env`), login-ul Steam real și `SteamProvider` (lipsește `STEAM_API_KEY`),
+imaginile Docker (Docker nu e instalat). Etapa 3c (Tauri) nu e făcută.
+
+## Etapa 4 — load test k6 (2026-11-15)
+**Prompt:** „da, rulează” (la propunerea de a instala k6 și a rula load test-ul).
+**Rezultat:** k6 v2.4.0 instalat cu winget; `loadtest/api.js` rulat pe API-ul local cu fixtures: 9.958 cereri,
+0 erori, p95 clasament 14,9 ms, celelalte rute sub 3,4 ms, toate pragurile trecute. Rezultatele și interpretarea sunt în
+`docs/loadtest.md`, iar rezumatul în `docs/prezentare.md`.
+**Neverificat:** load test-ul pe Supabase (lipsește `.env`).
+
+## Doar date reale, conectare Steam, personalizarea profilului (2026-11-15)
+**Prompt:** „scoate datele false și de test, lasă doar ce este real. și dă-i improve, să pot conecta contul să-mi ia
+jocurile. să-mi pot da customize la profil.” (plus o captură: sync-ul rămânea „queued”, contul Steam legat cu link-ul profilului).
+**Rezultat:** fixtures opționale (D45), PSN / Xbox / Epic „În curând”; buton „Conectează Steam” prin OpenID cu state semnat
+și sync automat (D47); Steam provider: 250 de jocuri, 6 în paralel; migrația 009 (bio, accent, banner, joc preferat,
+`profile_showcase`) + editor de profil, vitrină, totaluri, „Deblocate recent” (D46); `npm run user:role`. Teste: 24/24
+(3 noi în `profile.test.ts`). Baza locală curățată de fixtures; verificat în browser: editarea profilului și redirectul la Steam.
+**Neverificat:** sync-ul Steam real (lipsește `STEAM_API_KEY`); migrația 009 pe Supabase.
+**Cauza „queued”:** worker-ul nu rula; chiar pornit, sync-ul ar fi eșuat (fără cheie Steam, iar id-ul era un URL, nu SteamID64).

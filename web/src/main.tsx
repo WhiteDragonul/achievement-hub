@@ -2,8 +2,9 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { CurrentUserProvider } from './current-user';
-import { Layout } from './components/Layout';
+import { AuthProvider } from './auth';
+import { Aurora, Layout } from './components/Layout';
+import { AuthCallbackPage, LoginPage } from './pages/LoginPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { GamesPage } from './pages/GamesPage';
 import { GameDetailPage } from './pages/GameDetailPage';
@@ -21,9 +22,12 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <CurrentUserProvider>
+      <AuthProvider>
+        <Aurora />
         <BrowserRouter>
           <Routes>
+            <Route path="login" element={<LoginPage />} />
+            <Route path="auth/callback" element={<AuthCallbackPage />} />
             <Route element={<Layout />}>
               <Route index element={<LeaderboardPage />} />
               <Route path="games" element={<GamesPage />} />
@@ -34,7 +38,7 @@ createRoot(document.getElementById('root')!).render(
             </Route>
           </Routes>
         </BrowserRouter>
-      </CurrentUserProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,
 );

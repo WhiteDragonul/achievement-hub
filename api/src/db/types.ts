@@ -14,6 +14,11 @@ type TimestampDefault = ColumnType<Date, Date | string | undefined, Date | strin
 
 export type Role = 'user' | 'moderator' | 'admin';
 
+export const accentColors = ['violet', 'blue', 'cyan', 'emerald', 'amber', 'rose'] as const;
+export const banners = ['aurora', 'sunset', 'ocean', 'forest', 'midnight'] as const;
+export type AccentColor = (typeof accentColors)[number];
+export type Banner = (typeof banners)[number];
+
 export interface UsersTable {
   id: GeneratedAlways<number>;
   username: string;
@@ -22,6 +27,10 @@ export interface UsersTable {
   role: Generated<Role>;
   display_name: string | null;
   avatar_url: string | null;
+  bio: string | null;
+  accent_color: Generated<AccentColor>;
+  banner: Generated<Banner>;
+  favorite_game_id: number | null;
   is_banned: Generated<boolean>;
   hidden_from_leaderboards: Generated<boolean>;
   created_at: TimestampDefault;
@@ -122,6 +131,12 @@ export interface ReportsTable {
   resolved_at: Timestamp | null;
 }
 
+export interface ProfileShowcaseTable {
+  user_id: number;
+  position: number;
+  achievement_id: number;
+}
+
 export interface Database {
   users: UsersTable;
   refresh_tokens: RefreshTokensTable;
@@ -134,4 +149,5 @@ export interface Database {
   sync_runs: SyncRunsTable;
   friendships: FriendshipsTable;
   reports: ReportsTable;
+  profile_showcase: ProfileShowcaseTable;
 }

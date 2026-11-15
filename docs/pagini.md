@@ -4,17 +4,31 @@ Aplicația are 5 secțiuni în meniu și 2 pagini de detaliu. Pe telefon meniul 
 iar pe ecrane late (de la 768px) e un sidebar în stânga. Fiecare pagină citește datele prin API (`/api/...`),
 iar după orice modificare lista afectată se reîncarcă automat.
 
-> Până la etapa 3 (autentificare), userul curent se alege din selectorul „Acționezi ca” (implicit `demo`, id 3).
-> Coloana **Roluri** de mai jos arată cine va avea acces după etapa 3.
+> Toate paginile cer autentificare (altfel → `/login`). Coloana **Roluri** arată ce poate face fiecare rol;
+> API-ul verifică aceleași reguli la fiecare cerere (vezi [api.md](api.md#roluri)).
+> Interfața e în stil „Liquid Glass” (D42): carduri și bare de sticlă translucide peste un fundal colorat animat.
 
 | Pagină | Adresă | Roluri | Entități (tabele) | Operații |
 |---|---|---|---|---|
+| [Login](#0-login) | `/login`, `/auth/callback` | public | users, refresh_tokens | înregistrare, login (email sau Steam) |
 | [Clasament](#1-clasament) | `/` | toți | users, platform_accounts, user_achievements, achievements, friendships | citire (agregare) |
-| [Jocuri](#2-jocuri) | `/games` | toți; adăugare: moderator, admin | games, platforms | listă, căutare, creare |
-| [Detaliu joc](#3-detaliu-joc) | `/games/:id` | toți; editare catalog: moderator, admin | games, achievements, user_games, user_achievements | citire, modificare, ștergere joc; CRUD achievement-uri; adăugare/scoatere din bibliotecă; deblocare |
-| [Profil](#4-profil) | `/users/:id` | toți; acțiuni pe conturi: doar proprietarul | users, platform_accounts, user_games, sync_runs, friendships, reports | citire; legare/dezlegare cont; pornire sync; cerere de prietenie; raportare |
+| [Jocuri](#2-jocuri) | `/games` | toți; adăugare: admin | games, platforms | listă, căutare, creare |
+| [Detaliu joc](#3-detaliu-joc) | `/games/:id` | toți; editare catalog: admin | games, achievements, user_games, user_achievements | citire, modificare, ștergere joc; CRUD achievement-uri; adăugare/scoatere din bibliotecă; deblocare |
+| [Profil](#4-profil) | `/users/:id` | toți; conturi, sync, rapoarte CSV/Excel: proprietarul (și adminul) | users, platform_accounts, user_games, sync_runs, friendships, reports | citire; legare/dezlegare cont; pornire sync; cerere de prietenie; raportare |
 | [Prieteni](#5-prieteni) | `/friends` | user logat | friendships, users | listă, trimitere, acceptare, refuz, ștergere |
-| [Admin](#6-admin) | `/admin` | raportări: moderator, admin; utilizatori și platforme: admin | reports, users, platforms | CRUD complet |
+| [Admin](#6-admin) | `/admin` | moderator: raportări, suspendare / ascundere, raport PDF; admin: și roluri, ștergere, platforme | reports, users, platforms | CRUD complet |
+
+---
+
+## 0. Login
+
+**Scop:** intrarea în aplicație. Control segmentat „Autentificare / Cont nou”, câmpuri email + parolă
+(+ username la înregistrare) și butonul **Continuă cu Steam**.
+- Înregistrarea creează un user cu rolul `user` (parola → hash argon2) și pornește direct sesiunea;
+- erorile din DB apar sub formular (ex. username luat → `users_username_lower_uq`);
+- `/auth/callback` primește tokenurile după login-ul Steam și le salvează.
+
+**API:** `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/steam`, `GET /api/auth/me`.
 
 ---
 
@@ -92,18 +106,24 @@ Pe telefon, butoanele fiecărui achievement trec sub text:
 **Scop:** profilul unificat: tot ce are un jucător, de pe toate platformele, într-un singur loc.
 
 **Ce afișează:**
-- numele, username-ul, rolul, data înscrierii; avertisment dacă e ascuns din clasamente;
+- capul profilului: **banner** și **culoare de accent** alese de user, avatar, nume, rol, data înscrierii, **bio**,
+  totaluri (jocuri, achievement-uri, ore jucate, jocuri terminate 100%) și **jocul preferat**;
+- **Vitrina**: până la 3 achievement-uri alese de user (`profile_showcase`);
+- **Deblocate recent**: ultimele 6 achievement-uri; avertisment dacă userul e ascuns din clasamente;
 - patru carduri cu numărul de achievement-uri pe fiecare raritate;
 - **Conturi legate**: platforma, numele, câte jocuri și achievement-uri are contul, data ultimei sincronizări;
 - **Biblioteca de jocuri**: toate jocurile de pe toate conturile, cu progresul (deblocate / total) și orele jucate,
   încărcate câte 12 („Mai multe jocuri”).
 
 **Acțiuni pe profilul propriu:**
-- **Leagă un cont** (Create pe `platform_accounts`): se oferă doar platformele încă nelegate; tokenul opțional
-  e salvat criptat (pgcrypto) și nu mai e trimis niciodată înapoi;
+- **Editează profilul** (Update pe `users` + înlocuirea vitrinei în `profile_showcase`, într-o tranzacție):
+  nume afișat, avatar (link https), bio, accent, banner, joc preferat (din bibliotecă), vitrina (din achievement-urile deblocate);
+- **Conectează Steam** (Create pe `platform_accounts` prin login Steam, D47): SteamID-ul vine confirmat de Steam,
+  deci nimeni nu poate lega contul altcuiva; prima sincronizare pornește automat. PSN / Xbox / Epic apar „În curând”
+  (n-au integrare reală; cu `ALLOW_MOCK_PLATFORMS=true` se pot lega cu date demo);
 - **Dezleagă** (Delete): progresul contului dispare prin ON DELETE CASCADE;
 - **Sincronizează** (Create pe `sync_runs`, status `queued`) și **Istoric** (ultimele 5 sincronizări). Execuția
-  propriu-zisă a sincronizării se adaugă în etapa 3b.
+  e făcută de worker (pg-boss); pagina arată live „în coadă / se sincronizează” și motivul unui eșec.
 
 **Acțiuni pe profilul altcuiva:**
 - **Trimite cerere de prietenie** (Create pe `friendships`);

@@ -7,9 +7,9 @@ Proiect individual, Baze de date avansate. Documentul se completează la fiecare
 | 0. Tema | domeniul temei | ✅ |
 | 1. Modelare | tabele, relații, constrângeri, fixtures | ✅ |
 | 2. CRUD | operații CRUD, descrierea paginilor | ✅ |
-| 3. Autentificare | autentificare, 3 roluri | ⏳ |
-| 4. Performanță | indecși, load test | ⏳ |
-| 5. Rapoarte | PDF, CSV, Excel | ⏳ |
+| 3. Autentificare | autentificare, 3 roluri (+ extra: sync Steam/mock cu pg-boss) | ✅ |
+| 4. Performanță | indecși, materialized view, load test | ✅ |
+| 5. Rapoarte | PDF, CSV, Excel | ✅ |
 
 ---
 
@@ -118,10 +118,52 @@ Descrierea completă, cu capturi de ecran, rolurile, tabelele și operațiile fi
 | Admin | raportări (rezolvare = tranzacție), utilizatori, platforme | C R U D |
 
 ## 3. Autentificare
-*(se completează în etapa 3)*
+
+**Parole:** stocate doar ca hash **argon2id** (sarea și parametrii sunt în același string). La login, `argon2.verify`
+recalculează hash-ul parolei primite. Mesajul de eroare e același pentru email inexistent și parolă greșită.
+
+**Sesiuni — două tokenuri:**
+- **token de acces** — JWT semnat HS256, valabil 15 minute, trimis în `Authorization: Bearer …`. API-ul verifică doar
+  semnătura și expirarea (fără interogare în DB);
+- **refresh token** — 32 de octeți aleatori, valabil 30 de zile. În tabelul `refresh_tokens` e doar `sha256(token)`.
+  La fiecare reînnoire tokenul vechi e revocat (rotație); refolosirea unui token revocat revocă toate sesiunile userului.
+
+**Roluri (`users.role`, CHECK în DB):** `user`, `moderator`, `admin`, ierarhice. Verificarea e în API pe fiecare rută
+(tabelul complet în [api.md](api.md#roluri)); interfața doar ascunde ce nu e permis (ex. pagina Admin pentru useri).
+
+**Login cu Steam (OpenID 2.0):** API-ul redirecționează la Steam, Steam confirmă SteamID-ul, API-ul verifică răspunsul
+direct la Steam (`check_authentication`), apoi găsește sau creează userul și trimite tokenurile clientului.
+
+**Extra — sincronizare (3b):** butonul „Sincronizează” creează un rând `sync_runs` (`queued`) și un job **pg-boss**;
+worker-ul ia datele de la provider (Steam Web API real sau `MockProvider` pentru PSN/Xbox/Epic) și le scrie într-o
+singură tranzacție cu UPSERT. Statusul trece `queued → running → succeeded / failed`, iar pagina îl urmărește live.
+
+**Demonstrație:** login `demo@achievementhub.test` / `Parola123!` → pagina Admin nu apare; login ca
+`moderator@…` → Admin cu raportări; ca `admin@…` → și roluri, platforme. Teste: `npm test` (21 de teste, 7 pentru auth/roluri).
 
 ## 4. Performanță
-*(se completează în etapa 4)*
+
+Detalii și planuri complete: [indexes.md](indexes.md). Măsurat cu `npm run db:explain` (EXPLAIN ANALYZE, mediana din 5,
+„fără index” obținut cu `DROP INDEX` într-o tranzacție anulată cu `ROLLBACK`).
+
+| Optimizare | Interogare | Înainte | După |
+|---|---|---:|---:|
+| index `user_achievements (achievement_id)` | câți jucători au un achievement | 28,8 ms | 0,05 ms |
+| același index (FK cu `ON DELETE CASCADE`) | ștergerea unui achievement | 19,7 ms | 0,14 ms |
+| index `friendships (addressee_id)` | prieteniile unui user (BitmapOr) | 0,87 ms | 0,03 ms |
+| index `sync_runs (platform_account_id, created_at DESC)` | ultimele 5 sincronizări | 0,28 ms | 0,01 ms |
+| materialized view `leaderboard_scores` | clasamentul global | 143 ms | 7,1 ms |
+
+**Load test** ([loadtest.md](loadtest.md)): k6, până la 50 de utilizatori virtuali, scenariul unui jucător
+(clasament → profil → bibliotecă → joc). 9.958 cereri, 0 erori; p95: clasament 14,9 ms, celelalte rute sub 3,4 ms —
+toate pragurile trecute.
 
 ## 5. Rapoarte
-*(se completează în etapa 5)*
+
+| Raport | Unde în aplicație | Cum e generat |
+|---|---|---|
+| **CSV** — achievement-urile deblocate | Profil → „CSV” | `COPY (SELECT …) TO STDOUT WITH (FORMAT csv, HEADER)`: Postgres scrie CSV-ul, API-ul îl trimite ca stream |
+| **Excel** — biblioteca + rezumat pe raritate | Profil → „Excel” | exceljs: două foi, coloana Progres e formulă Excel, antet înghețat, filtru |
+| **PDF** — raport general | Admin → „Raport PDF” (moderator, admin) | pdfkit: volume, platforme, top 10, raritate, moderare, sincronizări; font DejaVu (diacritice) |
+
+Rapoartele respectă rolurile: CSV/Excel doar pentru propriul profil (sau admin), PDF doar pentru moderatori.

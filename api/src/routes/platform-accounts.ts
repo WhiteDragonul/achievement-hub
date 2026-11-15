@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { sql } from 'kysely';
 import { config } from '../config.js';
+import { assertOwnsAccount, assertSelf, forbid, hasRole } from '../auth.js';
 import { db } from '../db/db.js';
 import { idParams, notFound, paginationProperties, type IdParams, type Pagination } from './common.js';
 
@@ -61,6 +62,18 @@ export async function platformAccountsRoutes(app: FastifyInstance) {
       },
     },
   }, async (request, reply) => {
+    assertSelf(request, request.body.user_id); // un user își leagă conturi doar sieși
+    const platform = await db.selectFrom('platforms').select(['is_mock', 'name'])
+      .where('id', '=', request.body.platform_id).executeTakeFirst();
+    // Platformă reală (Steam): contul se leagă doar prin login Steam (/auth/steam/link), care dovedește că e al userului.
+    // Altfel oricine ar putea „revendica” SteamID-ul altcuiva. Adminul poate lega manual (ex. corecturi).
+    if (platform && !platform.is_mock && !hasRole(request.user, 'admin')) {
+      forbid(`Contul ${platform.name} se leagă prin butonul „Conectează ${platform.name}”`);
+    }
+    // Platformele fără provider real (date generate) sunt dezactivate, ca profilul să conțină doar date reale (D45).
+    if (platform?.is_mock && !config.allowMockPlatforms) {
+      return reply.code(400).send({ error: `${platform.name} nu are încă o integrare reală` });
+    }
     const { access_token, ...fields } = request.body;
     const account = await db.insertInto('platform_accounts')
       .values({ ...fields, access_token_enc: access_token ? encrypt(access_token) : null })
@@ -79,6 +92,7 @@ export async function platformAccountsRoutes(app: FastifyInstance) {
       },
     },
   }, async (request, reply) => {
+    await assertOwnsAccount(request, request.params.id);
     const { display_name, access_token } = request.body;
     // Kysely ignoră valorile undefined: coloanele netrimise în body nu se modifică.
     const account = await db.updateTable('platform_accounts')
@@ -91,6 +105,7 @@ export async function platformAccountsRoutes(app: FastifyInstance) {
 
   // Dezlegarea unui cont: progresul lui (user_games, user_achievements, sync_runs) dispare prin ON DELETE CASCADE.
   app.delete<{ Params: IdParams }>('/platform-accounts/:id', { schema: { params: idParams } }, async (request, reply) => {
+    await assertOwnsAccount(request, request.params.id);
     const result = await db.deleteFrom('platform_accounts').where('id', '=', request.params.id).executeTakeFirst();
     if (result.numDeletedRows === 0n) return reply.code(404).send(notFound('Contul de platformă'));
     return reply.code(204).send();

@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import argon2 from 'argon2';
 import { config } from '../config.js';
+import { refreshLeaderboard } from './leaderboard.js';
 import { pool } from './db.js';
 
 const SEED_FILE = path.resolve(import.meta.dirname, '../../../db/fixtures/seed.sql');
@@ -44,6 +45,9 @@ export async function seedIfEmpty(): Promise<void> {
   } finally {
     client.release();
   }
+
+  // Clasamentul precalculat (008) a fost creat pe tabele goale; îl calculăm acum, pe datele generate.
+  await refreshLeaderboard();
 
   const counts: Record<string, number> = {};
   for (const table of COUNTED_TABLES) {

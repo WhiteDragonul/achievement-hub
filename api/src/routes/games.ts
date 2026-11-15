@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { sql } from 'kysely';
+import { requireRole } from '../auth.js';
 import { db } from '../db/db.js';
 import { idParams, notFound, paginationProperties, type IdParams, type Pagination } from './common.js';
 
@@ -13,6 +14,11 @@ const gameBodyProperties = {
 } as const;
 
 export async function gamesRoutes(app: FastifyInstance) {
+  // Catalogul se modifică doar de admin (sau de sync); citirea e permisă oricărui user autentificat.
+  app.addHook('preHandler', async (request) => {
+    if (request.method !== 'GET') await requireRole('admin')(request);
+  });
+
   app.get<{ Querystring: Pagination & { platform_id?: number; search?: string } }>('/games', {
     schema: {
       querystring: {

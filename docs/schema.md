@@ -1,6 +1,6 @@
 # Modelul de date
 
-PostgreSQL pe Supabase, schema `public`, 11 tabele. Migrațiile sunt în `db/migrations/` (rulate în ordinea numerelor).
+PostgreSQL pe Supabase, schema `public`, 12 tabele. Migrațiile sunt în `db/migrations/` (rulate în ordinea numerelor).
 Deciziile de design (Dn) sunt explicate în `DECISIONS.md`.
 
 ## Diagrama ER
@@ -22,6 +22,9 @@ erDiagram
     users ||--o{ reports     : "raportează"
     users ||--o{ reports     : "e raportat"
     users |o--o{ reports     : "rezolvă (moderator)"
+    users ||--o{ profile_showcase : "vitrină (max. 3)"
+    achievements ||--o{ profile_showcase : ""
+    games |o--o{ users : "joc preferat"
 
     users {
         bigint id PK
@@ -154,3 +157,14 @@ erDiagram
 - Indecși de performanță (în afara celor din PK/UNIQUE) — vin în etapa 7, cu EXPLAIN ANALYZE înainte/după (D10).
 - Tabelul de evidență a migrațiilor (`schema_migrations`) — îl creează runner-ul de migrații din etapa 2.
 - Tabelele pg-boss — pg-boss își creează singur schema `pgboss` la pornire.
+
+## Personalizarea profilului (migrația 009, D46)
+
+| Coloană / tabel | Tip | Constrângeri |
+|---|---|---|
+| `users.bio` | text | `char_length(bio) <= 300` |
+| `users.accent_color` | text, implicit `violet` | CHECK în (`violet`, `blue`, `cyan`, `emerald`, `amber`, `rose`) |
+| `users.banner` | text, implicit `aurora` | CHECK în (`aurora`, `sunset`, `ocean`, `forest`, `midnight`) |
+| `users.favorite_game_id` | bigint | FK → `games`, `ON DELETE SET NULL`; API-ul cere ca jocul să fie în biblioteca userului |
+| `users.avatar_url` | text | CHECK `^https://` (fără `javascript:` / `http:` în `<img>`) |
+| `profile_showcase` | (`user_id`, `position`) PK, `achievement_id` | `position BETWEEN 1 AND 3`, UNIQUE (`user_id`, `achievement_id`), ambele FK cu `ON DELETE CASCADE`; „doar achievement-uri deblocate” verificat în API |

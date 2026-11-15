@@ -7,7 +7,7 @@ let ctx: Awaited<ReturnType<typeof startTestApp>>;
 const ids = {} as Record<'alice' | 'bob' | 'carol' | 'game' | 'aliceAccount' | 'ultra' | 'very' | 'common', number>;
 
 async function call(method: 'GET' | 'POST' | 'PATCH', url: string, payload?: object) {
-  const response = await ctx.app.inject({ method, url, payload });
+  const response = await ctx.app.inject({ method, url, payload, headers: { authorization: `Bearer ${ctx.adminToken}` } });
   return { status: response.statusCode, body: response.json() };
 }
 
@@ -42,6 +42,9 @@ before(async () => {
   }
   await call('POST', '/api/friendships', { requester_id: ids.bob, addressee_id: ids.alice });
   await call('PATCH', `/api/friendships/${ids.bob}/${ids.alice}`, { status: 'accepted' });
+  // Clasamentul citește din materialized view (008); în aplicație îl reîmprospătează worker-ul.
+  const { refreshLeaderboard } = await import('../src/db/leaderboard.js');
+  await refreshLeaderboard();
 });
 after(async () => {
   await ctx.stop();

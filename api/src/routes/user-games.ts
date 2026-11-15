@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { assertOwnsAccount } from '../auth.js';
 import { db } from '../db/db.js';
 import { notFound, paginationProperties, type Pagination } from './common.js';
 
@@ -18,6 +19,15 @@ type UserGameBody = {
 };
 
 export async function userGamesRoutes(app: FastifyInstance) {
+  // Scrierile sunt permise doar proprietarului contului de platformă (sau adminului).
+  // preHandler rulează după validare, deci id-urile sunt deja numere.
+  app.addHook('preHandler', async (request) => {
+    if (request.method === 'GET') return;
+    const params = request.params as { platformAccountId?: number };
+    const body = request.body as { platform_account_id?: number } | undefined;
+    await assertOwnsAccount(request, params.platformAccountId ?? body?.platform_account_id ?? 0);
+  });
+
   // Jocurile unui cont, cu titlul jocului (JOIN cu games).
   app.get<{ Querystring: Pagination & { platform_account_id: number } }>('/user-games', {
     schema: {

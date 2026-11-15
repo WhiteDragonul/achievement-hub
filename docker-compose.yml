@@ -1,6 +1,5 @@
 # `docker compose up` pornește aplicația. Baza de date NU e aici: e pe Supabase (DECISIONS.md D1),
 # conexiunea vine din DATABASE_URL din .env.
-# Serviciul worker (sync) se adaugă în etapa 3b.
 services:
   api:
     build:
@@ -18,6 +17,18 @@ services:
       interval: 30s
       timeout: 5s
       start_period: 120s   # prima pornire generează fixtures
+
+  # Același cod ca API-ul, alt punct de pornire: execută joburile de sync din coada pg-boss.
+  worker:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    command: ["node", "dist/worker.js"]
+    env_file: .env
+    depends_on:
+      api:
+        condition: service_healthy   # API-ul aplică migrațiile înainte
+    restart: unless-stopped
 
   web:
     build:

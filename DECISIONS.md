@@ -170,3 +170,101 @@ userul `demo`); în etapa 3 id-ul va veni din token, iar selectorul dispare.
 
 **D30 — În dezvoltare, Vite face proxy pentru `/api`; în Docker, nginx face același lucru.**
 Browserul vede o singură origine, deci nu e nevoie de CORS. Aplicația Tauri (etapa 3c) va folosi `VITE_API_URL`.
+
+## Etapa 3 — Autentificare și roluri
+
+**D31 — JWT de acces (15 min, HS256) scris direct cu `node:crypto`, fără bibliotecă.**
+Un JWT are trei părți `header.payload.semnătură`; semnătura e HMAC-SHA256 peste primele două cu `JWT_SECRET`.
+Implementarea are ~20 de linii (`api/src/auth.ts`), deci se poate explica integral; compararea semnăturii folosește
+`timingSafeEqual`. Tokenul conține doar `id`, `role`, `username` și `exp`, nu date sensibile (payload-ul nu e criptat).
+
+**D32 — Refresh token opac (32 de octeți aleatori), în DB doar `sha256(token)`, cu rotație și detectarea refolosirii.**
+La fiecare `/auth/refresh` tokenul vechi primește `revoked_at` și se emite unul nou. Dacă cineva prezintă un token
+deja revocat, înseamnă că a fost copiat → revocăm toate sesiunile userului. Hash-ul (nu tokenul) e în DB: o scurgere
+a bazei nu dă acces la sesiuni. sha256 e suficient aici (nu argon2), pentru că tokenul e aleator, nu o parolă ghicibilă.
+
+**D33 — Pe web, tokenul de acces stă doar în memorie, refresh token-ul în `localStorage`.**
+Compromis acceptat pentru proiect: un atac XSS ar putea citi refresh token-ul (o alternativă ar fi cookie `httpOnly`,
+care cere protecție CSRF). În aplicația Tauri locul lui e Keychain / Keystore (D20 din brief). La 401 clientul face un
+singur refresh pentru toate cererile simultane și repetă cererea.
+
+**D34 — Rolurile sunt ierarhice (`user` < `moderator` < `admin`) și se verifică în API, nu în interfață.**
+Hook-ul `authenticate` protejează tot `/api` în afară de `/auth/*` (encapsulare Fastify). Regulile stau lângă rute:
+catalogul (platforme, jocuri, achievement-uri) — scriere doar admin; progresul și conturile — doar proprietarul;
+raportări — oricine creează, moderatorul vede și rezolvă, adminul șterge; suspendare / ascundere — moderator;
+schimbarea rolului — doar admin. Interfața ascunde butoanele nepermise doar pentru confort.
+
+**D35 — Un user suspendat pierde toate sesiunile; rolul se recitește din DB la fiecare refresh.**
+Tokenul de acces nu se verifică în DB la fiecare cerere (ar costa o interogare), deci o schimbare de rol sau o
+suspendare se aplică în cel mult 15 minute. La suspendare revocăm imediat refresh token-urile.
+
+## Etapa 3b — Sincronizare
+
+**D36 — `AchievementProvider` cu două implementări: `SteamProvider` (Steam Web API real) și `MockProvider`.**
+Mock-ul alege jocuri reale din catalogul platformei și „deblochează” achievement-uri cu probabilitatea dată de procentul
+lor global, determinist (seed = id-ul extern al contului), deci un al doilea sync nu schimbă nimic. Steam: doar jocurile
+jucate, cel mult 60 per sync (limita de cereri Steam); profilul trebuie să aibă „Game details” public.
+
+**D37 — Coada de sync în pg-boss, în același Postgres; worker separat.**
+API-ul doar inserează rândul în `sync_runs` și trimite jobul; worker-ul îl execută. Un sync Steam poate dura zeci de
+secunde: nu trebuie să țină ocupată o cerere HTTP. pg-boss folosește `SELECT … FOR UPDATE SKIP LOCKED`, deci mai mulți
+workeri pot rula în paralel fără să ia același job. Scrierea rezultatelor e o singură tranzacție cu UPSERT
+(`ON CONFLICT DO UPDATE` pentru catalog, `DO NOTHING` pentru deblocări — data primei deblocări nu se schimbă).
+
+**D38 — Login Steam prin OpenID 2.0, verificat de Steam (`check_authentication`), tokenurile în fragmentul URL.**
+Steam confirmă doar SteamID-ul; la prima autentificare se creează un user fără email/parolă, cu contul Steam legat.
+Destinațiile după login sunt fixe (web sau deep-link Tauri), deci nu există „open redirect”. Fragmentul (`#…`) nu e
+trimis la niciun server și e șters imediat din bara de adrese.
+
+## Etapa 5 — Rapoarte
+
+**D39 — CSV generat de Postgres cu `COPY (SELECT …) TO STDOUT`, trimis ca stream.**
+Postgres produce direct CSV-ul (ghilimele, escape) și serverul nu ține fișierul în memorie. `COPY` nu acceptă parametri,
+deci id-ul e interpolat — sigur doar pentru că schema rutei garantează un întreg.
+
+**D40 — Excel cu exceljs: două foi, coloana „Progres” ca formulă Excel.**
+Formula (`=E2/F2`) rămâne corectă dacă cineva modifică datele în Excel; antet înghețat și filtru automat.
+
+**D41 — PDF cu pdfkit și fontul DejaVu Sans (pachet npm).**
+Fontul implicit al PDF-ului (Helvetica) nu are ă, ș, ț. Raportul de ansamblu e doar pentru moderatori și admini.
+
+## Etapa 4 — Performanță
+
+**D43 — Indecși doar unde o interogare reală îi folosește, măsurați cu EXPLAIN ANALYZE în tranzacții cu ROLLBACK.**
+Trei indecși (007): cheia străină `user_achievements.achievement_id`, `friendships.addressee_id`,
+`sync_runs (platform_account_id, created_at DESC)`. Tabelele mici (`games`, `reports`) rămân fără index suplimentar.
+Detalii și cifre: `docs/indexes.md`.
+
+**D44 — Clasamentul citește dintr-un materialized view reîmprospătat de worker.**
+Agregarea peste toate deblocările nu poate fi accelerată cu indecși. Acceptăm întârziere de câteva minute
+(refresh după fiecare sync + la 5 minute) pentru ~20× mai puțin timp per cerere — clasamentul e cea mai frecventă cerere.
+
+## Interfață
+
+**D42 — Stil „Liquid Glass”: suprafețe translucide cu `backdrop-filter`, implementate ca utilitare Tailwind.**
+`glass`, `glass-bar`, `glass-pill`, `glass-field`, `glass-tint` (în `web/src/index.css`): blur + saturație pe fundalul
+din spate, margine luminoasă și reflex în colț; fundalul are pete de culoare animate („aurora”). Tab-ul activ e marcat
+de o bulă care alunecă (transform + curbă „cu arc”). Animațiile se opresc la `prefers-reduced-motion`.
+
+**D45 — Implicit doar date reale: fixtures și platformele cu date generate sunt opționale.**
+Aplicația urmează să fie folosită de jucători reali, deci un profil nu trebuie să conțină date inventate.
+`SEED_ON_START` e acum `false` implicit; fixtures rămân disponibile pentru evaluare și load test (`SEED_ON_START=true` sau
+`npm run db:seed`), fără să schimbe codul. PSN / Xbox / Epic n-au încă un provider real, deci legarea lor e oprită
+(`ALLOW_MOCK_PLATFORMS=false`); interfața le arată „În curând”. Fără fixtures nu există admin: primul se numește cu
+`npm run user:role -- <username> admin` (are nevoie de acces la server, deci nu poate fi folosit de un vizitator).
+
+**D46 — Personalizarea profilului: coloane în `users` + tabelul `profile_showcase`.**
+Bio, accent, banner, joc preferat sunt atribute 1:1 ale userului → coloane în `users`. Accentul și bannerul sunt
+alese dintr-o listă fixă (CHECK), nu culori / imagini libere: fiecare valoare are o temă testată în interfață și nu
+există conținut încărcat de user de moderat. Vitrina e o relație 1:N cu ordine → tabel separat cu PK (`user_id`, `position`),
+`position` 1–3 (CHECK limitează la 3), UNIQUE ca același achievement să nu apară de două ori. Regula „doar achievement-uri
+deblocate” cere un join prin `platform_accounts`, deci e verificată în API (o alternativă ar fi un trigger).
+`avatar_url` primește CHECK `^https://`, ca un link `javascript:` sau nesecurizat să nu ajungă în `<img>`.
+
+**D47 — Contul Steam se leagă doar prin login Steam (OpenID), cu un „state” semnat.**
+Legarea manuală (SteamID scris de mână) ar permite oricui să-și atribuie profilul Steam al altcuiva, iar userii puneau
+link-ul profilului în loc de SteamID64. Acum `POST /auth/steam/link` dă un token „state” (JWT HS256, `purpose: steam-link`,
+10 minute) cu id-ul userului logat; browserul pleacă la Steam fără header-ul Authorization, iar la întoarcere
+API-ul află din state cui îi leagă SteamID-ul confirmat de Steam. Tokenul are `purpose`, deci `verifyAccessToken`
+îl respinge: nu poate fi folosit ca token de acces. După legare (și la primul login Steam) se pornește automat un sync.
+Sync-ul Steam ia acum până la 250 de jocuri deținute (și cele neîncepute), câte 6 în paralel.

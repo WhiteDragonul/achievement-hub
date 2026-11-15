@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { requireRole } from '../auth.js';
 import { db } from '../db/db.js';
 import { idParams, notFound, paginationProperties, type IdParams, type Pagination } from './common.js';
 
@@ -25,6 +26,11 @@ const achievementBodyProperties = {
 } as const;
 
 export async function achievementsRoutes(app: FastifyInstance) {
+  // Catalogul se modifică doar de admin (sau de sync); citirea e permisă oricărui user autentificat.
+  app.addHook('preHandler', async (request) => {
+    if (request.method !== 'GET') await requireRole('admin')(request);
+  });
+
   app.get<{ Querystring: Pagination & { game_id?: number; rarity?: Rarity } }>('/achievements', {
     schema: {
       querystring: {

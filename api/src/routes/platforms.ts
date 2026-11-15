@@ -1,4 +1,6 @@
 import type { FastifyInstance } from 'fastify';
+import { requireRole } from '../auth.js';
+import { config } from '../config.js';
 import { db } from '../db/db.js';
 import { idParams, notFound, type IdParams } from './common.js';
 
@@ -11,9 +13,16 @@ const platformBodyProperties = {
 } as const;
 
 export async function platformsRoutes(app: FastifyInstance) {
+  // Catalogul se modifică doar de admin (sau de sync); citirea e permisă oricărui user autentificat.
+  app.addHook('preHandler', async (request) => {
+    if (request.method !== 'GET') await requireRole('admin')(request);
+  });
+
   // Doar 4 platforme: nu are nevoie de paginare.
+  // `linkable` spune interfeței dacă se pot lega conturi pe platformă (cele cu date generate sunt oprite implicit, D45).
   app.get('/platforms', async () => {
-    return db.selectFrom('platforms').selectAll().orderBy('id').execute();
+    const platforms = await db.selectFrom('platforms').selectAll().orderBy('id').execute();
+    return platforms.map((platform) => ({ ...platform, linkable: !platform.is_mock || config.allowMockPlatforms }));
   });
 
   app.get<{ Params: IdParams }>('/platforms/:id', { schema: { params: idParams } }, async (request, reply) => {

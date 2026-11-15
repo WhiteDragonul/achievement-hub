@@ -1,7 +1,8 @@
 # API — operații CRUD
 
 Toate rutele sunt sub `/api`, primesc și întorc JSON. Listele acceptă `limit` (1–100, implicit 20) și `offset`.
-Deocamdată fără autentificare; în etapa 3 fiecare rută primește regulile de acces pe roluri.
+Toate rutele, în afară de `/auth/*`, cer header-ul `Authorization: Bearer <token de acces>` (altfel 401);
+regulile pe roluri sunt în secțiunea [Roluri](#roluri) (o operație nepermisă → 403).
 
 | Resursă | Listă (filtre) | Citire | Creare | Modificare | Ștergere |
 |---|---|---|---|---|---|
@@ -16,7 +17,52 @@ Deocamdată fără autentificare; în etapa 3 fiecare rută primește regulile d
 | Prietenii | `GET /friendships` (`user_id`*, `status`) | `GET /friendships/:requesterId/:addresseeId` | `POST /friendships` | `PATCH /friendships/:requesterId/:addresseeId` (acceptare) | `DELETE /friendships/:requesterId/:addresseeId` |
 | Raportări | `GET /reports` (`status`, `target_user_id`) | `GET /reports/:id` | `POST /reports` | `PATCH /reports/:id` (rezolvare) | `DELETE /reports/:id` |
 
-\* filtru obligatoriu. Sesiunile (`refresh_tokens`) se creează la login și se gestionează în etapa 3.
+\* filtru obligatoriu. Sesiunile (`refresh_tokens`) se creează și se revocă prin rutele `/auth/*`.
+
+## Autentificare
+
+| Rută | Body | Răspuns |
+|---|---|---|
+| `POST /auth/register` | `username`, `email`, `password` (min. 8) | 201 `{ user, access_token, refresh_token, expires_in }` — rolul e mereu `user` |
+| `POST /auth/login` | `email`, `password` | 200 ca mai sus; 401 „Email sau parolă greșită”; 403 cont suspendat |
+| `POST /auth/refresh` | `refresh_token` | o pereche nouă de tokenuri; tokenul vechi e revocat (rotație). Un token revocat refolosit → toate sesiunile userului sunt revocate |
+| `POST /auth/logout` | `refresh_token` | 204, sesiunea e revocată |
+| `GET /auth/me` | — | userul din token, cu datele actuale din DB |
+| `GET /auth/steam?client=web` (sau `app`) | — | redirect la login-ul Steam (OpenID); la întoarcere, redirect la client cu tokenurile în `#fragment` |
+| `POST /auth/steam/link` (cu token) | `client` | `{ url }`: adresa de login Steam cu un „state” semnat (10 min); la întoarcere contul Steam e legat userului logat și primul sync pornește automat (D47) |
+
+## Profil (migrația 009)
+
+| Rută | Body | Acces |
+|---|---|---|
+| `PATCH /users/:id` | în plus `bio`, `accent_color`, `banner`, `favorite_game_id` | proprietarul (sau admin); jocul preferat trebuie să fie în bibliotecă |
+| `PUT /users/:id/showcase` | `achievement_ids` (0–3, unice) | proprietarul; doar achievement-uri deblocate de el; înlocuiește vitrina într-o tranzacție |
+| `GET /users/:id/achievements` | `limit`, `offset` | oricine logat; ultimele deblocate |
+| `GET /users/:id/profile` | — | include acum `totals`, `favorite_game`, `showcase` |
+
+Tokenul de acces e un JWT HS256 valabil 15 minute; refresh token-ul e valabil 30 de zile (D31–D33).
+
+## Roluri
+
+Ierarhice: `admin` poate tot ce poate `moderator`, `moderator` tot ce poate `user`.
+
+| Resursă | Citire | Scriere |
+|---|---|---|
+| Platforme, jocuri, achievement-uri (catalog) | oricine logat | admin |
+| Utilizatori | oricine logat (emailul altora doar pentru moderator+) | propriul profil; `is_banned` / `hidden_from_leaderboards`: moderator; `role`, creare: admin; ștergere: proprietarul sau admin |
+| Conturi de platformă, jocuri deținute, deblocări | oricine logat | proprietarul contului sau admin; contul Steam doar prin login Steam (`/auth/steam/link`), legarea manuală doar admin; PSN / Xbox / Epic doar cu `ALLOW_MOCK_PLATFORMS=true` |
+| Sincronizări | oricine logat | creare: proprietarul contului; modificare / ștergere: admin (în rest le scrie worker-ul) |
+| Prietenii | doar cei doi (sau moderator) | cererea pleacă de la userul logat; acceptă doar destinatarul; oricare o poate șterge |
+| Raportări | moderator | creare: oricine (ca el însuși); rezolvare: moderator (`resolved_by` = moderatorul din token); ștergere: admin |
+| `GET /stats` | admin | — |
+
+## Rapoarte (etapa 5)
+
+| Rută | Format | Acces |
+|---|---|---|
+| `GET /exports/users/:id/achievements.csv` | CSV generat cu `COPY … TO STDOUT`, trimis ca stream | proprietarul sau admin |
+| `GET /exports/users/:id/library.xlsx` | Excel: foaia „Jocuri” (progres ca formulă) + „Raritate” | proprietarul sau admin |
+| `GET /exports/overview.pdf` | PDF: volume, platforme, top 10, raritate, moderare, sincronizări | moderator, admin |
 
 ## Coduri de răspuns
 

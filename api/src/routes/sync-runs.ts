@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify';
+import { assertOwnsAccount, requireRole } from '../auth.js';
 import { db } from '../db/db.js';
+import { requestSync } from '../sync/queue.js';
 import { idParams, notFound, paginationProperties, type IdParams, type Pagination } from './common.js';
 
 type SyncStatus = 'queued' | 'running' | 'succeeded' | 'failed';
@@ -42,15 +44,15 @@ export async function syncRunsRoutes(app: FastifyInstance) {
       body: { type: 'object', required: ['platform_account_id'], properties: { platform_account_id: { type: 'integer' } } },
     },
   }, async (request, reply) => {
-    const run = await db.insertInto('sync_runs')
-      .values({ platform_account_id: request.body.platform_account_id })
-      .returningAll()
-      .executeTakeFirstOrThrow();
-    return reply.code(201).send(run);
+    await assertOwnsAccount(request, request.body.platform_account_id);
+    // Jobul ajunge în coada pg-boss; worker-ul îl execută și actualizează rândul (running → succeeded / failed).
+    return reply.code(201).send(await requestSync(request.body.platform_account_id));
   });
 
   // Consistența e păzită de CHECK-uri: 'failed' fără error_message → 400, finished_at < started_at → 400.
+  // Starea unei sincronizări o schimbă worker-ul; manual, doar adminul.
   app.patch<{ Params: IdParams; Body: UpdateSyncRunBody }>('/sync-runs/:id', {
+    preHandler: requireRole('admin'),
     schema: {
       params: idParams,
       body: {
@@ -74,7 +76,7 @@ export async function syncRunsRoutes(app: FastifyInstance) {
     return run ?? reply.code(404).send(notFound('Sincronizarea'));
   });
 
-  app.delete<{ Params: IdParams }>('/sync-runs/:id', { schema: { params: idParams } }, async (request, reply) => {
+  app.delete<{ Params: IdParams }>('/sync-runs/:id', { schema: { params: idParams }, preHandler: requireRole('admin') }, async (request, reply) => {
     const result = await db.deleteFrom('sync_runs').where('id', '=', request.params.id).executeTakeFirst();
     if (result.numDeletedRows === 0n) return reply.code(404).send(notFound('Sincronizarea'));
     return reply.code(204).send();

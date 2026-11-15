@@ -14,7 +14,8 @@ export const pool = new pg.Pool({
   // Supabase acceptă doar conexiuni TLS. Certificatul pooler-ului e semnat de CA-ul propriu Supabase,
   // nu de un CA public, deci conexiunea e criptată, dar certificatul nu e verificat (D15).
   ssl: config.databaseSsl ? { rejectUnauthorized: false } : false,
-  max: 10,
+  // Testele rulează pe PGlite, care servește o singură conexiune → DATABASE_POOL_MAX=1 acolo.
+  max: Number(process.env.DATABASE_POOL_MAX ?? 10),
 });
 
 // Pooler-ul Supabase închide conexiunile inactive. Fără acest handler, eroarea emisă de o conexiune

@@ -46,6 +46,8 @@ Toate au parola din `FIXTURE_PASSWORD` (implicit în `.env.example`).
 
 ## Re-generare
 
+Fixtures **nu** se mai încarcă implicit (D45): baza aplicației conține doar conturile reale.
+Pentru evaluare sau load test: `SEED_ON_START=true` în `.env` (la pornire, doar dacă nu există useri) sau `npm run db:seed`.
 Fixtures se încarcă doar pe o bază fără useri. Ca să le regenerezi, golește tabelele (ex. în SQL Editor:
 `TRUNCATE users, platforms, games RESTART IDENTITY CASCADE;` urmat de re-inserarea platformelor din migrația 003)
 sau recreează proiectul. Comanda separată: `npm run db:seed` (în `api/`).

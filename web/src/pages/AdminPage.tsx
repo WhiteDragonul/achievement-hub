@@ -1,34 +1,37 @@
-// Administrare, în trei secțiuni: raportări (moderator), utilizatori și platforme (admin).
-// În etapa 3 fiecare secțiune va fi vizibilă doar rolului potrivit.
+// Administrare, în trei secțiuni: raportări și utilizatori (moderator: suspendare / ascundere; admin: și roluri, ștergere),
+// platforme (doar admin). Ce nu are voie rolul curent nu apare; API-ul verifică oricum fiecare cerere (403).
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, type Platform, type Report, type Role, type User } from '../api';
-import { useCurrentUser } from '../current-user';
-import { Button, Card, ErrorMessage, Input, Loading, PageTitle, Select } from '../components/ui';
+import { api, download, type Platform, type Report, type Role, type User } from '../api';
+import { useCurrentUser } from '../auth';
+import { Button, Card, ErrorMessage, Input, Loading, PageTitle, Segmented, Select } from '../components/ui';
 
-const tabs = [
-  { id: 'reports', label: 'Raportări' },
-  { id: 'users', label: 'Utilizatori' },
-  { id: 'platforms', label: 'Platforme' },
-] as const;
+type Tab = 'reports' | 'users' | 'platforms';
 
 export function AdminPage() {
-  const [tab, setTab] = useState<(typeof tabs)[number]['id']>('reports');
+  const { isModerator, isAdmin } = useCurrentUser();
+  const [tab, setTab] = useState<Tab>('reports');
+  const [error, setError] = useState<unknown>(null);
+  if (!isModerator) return <ErrorMessage error={new Error('Pagina e disponibilă doar moderatorilor și adminilor.')} />;
+
+  const tabs: { id: Tab; label: string }[] = [{ id: 'reports', label: 'Raportări' }, { id: 'users', label: 'Utilizatori' }];
+  if (isAdmin) tabs.push({ id: 'platforms', label: 'Platforme' });
+
   return (
     <>
-      <PageTitle subtitle="Moderare și administrare">Admin</PageTitle>
-      <div className="mb-5 flex gap-1 rounded-xl bg-slate-900 p-1">
-        {tabs.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setTab(item.id)}
-            className={`min-h-10 flex-1 rounded-lg text-sm font-medium ${tab === item.id ? 'bg-slate-700 text-white' : 'text-slate-400'}`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      <PageTitle
+        subtitle={isAdmin ? 'Moderare și administrare' : 'Moderare'}
+        actions={
+          <Button variant="secondary" onClick={() => download('/exports/overview.pdf', 'raport-achievement-hub.pdf').catch(setError)}>
+            Raport PDF
+          </Button>
+        }
+      >
+        Admin
+      </PageTitle>
+      <ErrorMessage error={error} />
+      <Segmented options={tabs} value={tab} onChange={setTab} />
       {tab === 'reports' && <ReportsSection />}
       {tab === 'users' && <UsersSection />}
       {tab === 'platforms' && <PlatformsSection />}
@@ -46,7 +49,7 @@ function useApiMutation(invalidateKey: string) {
 }
 
 function ReportsSection() {
-  const { userId } = useCurrentUser();
+  const { isAdmin } = useCurrentUser();
   const [status, setStatus] = useState('open');
   const reports = useQuery({
     queryKey: ['reports', status],
@@ -67,12 +70,12 @@ function ReportsSection() {
           {reports.data?.map((report) => (
             <Card key={report.id}>
               <p className="text-sm">
-                <Link to={`/users/${report.reporter_id}`} className="text-indigo-300">@{report.reporter_username}</Link>
+                <Link to={`/users/${report.reporter_id}`} className="text-sky-300">@{report.reporter_username}</Link>
                 {' a raportat pe '}
-                <Link to={`/users/${report.target_user_id}`} className="text-indigo-300">@{report.target_username}</Link>
+                <Link to={`/users/${report.target_user_id}`} className="text-sky-300">@{report.target_username}</Link>
               </p>
-              <p className="mt-1 text-slate-300">„{report.reason}”</p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-white/75">„{report.reason}”</p>
+              <p className="mt-1 text-xs text-white/40">
                 {new Date(report.created_at).toLocaleString('ro-RO')}
                 {report.resolution_note && ` · ${report.resolution_note}`}
               </p>
@@ -81,23 +84,25 @@ function ReportsSection() {
                   <>
                     <Button onClick={() => mutate.mutate({
                       path: `/reports/${report.id}`, method: 'PATCH',
-                      body: { status: 'resolved', resolved_by: userId, resolution_note: 'Utilizator ascuns din clasamente.' },
+                      body: { status: 'resolved', resolution_note: 'Utilizator ascuns din clasamente.' },
                     })}>
                       Rezolvă (ascunde userul)
                     </Button>
                     <Button variant="secondary" onClick={() => mutate.mutate({
                       path: `/reports/${report.id}`, method: 'PATCH',
-                      body: { status: 'rejected', resolved_by: userId, resolution_note: 'Nu am găsit dovezi.' },
+                      body: { status: 'rejected', resolution_note: 'Nu am găsit dovezi.' },
                     })}>
                       Respinge
                     </Button>
                   </>
                 )}
-                <Button variant="danger" onClick={() => mutate.mutate({ path: `/reports/${report.id}`, method: 'DELETE' })}>Șterge</Button>
+                {isAdmin && (
+                  <Button variant="danger" onClick={() => mutate.mutate({ path: `/reports/${report.id}`, method: 'DELETE' })}>Șterge</Button>
+                )}
               </div>
             </Card>
           ))}
-          {reports.data?.length === 0 && <p className="text-sm text-slate-400">Nicio raportare.</p>}
+          {reports.data?.length === 0 && <p className="text-sm text-white/55">Nicio raportare.</p>}
         </div>
       )}
     </>
@@ -105,6 +110,7 @@ function ReportsSection() {
 }
 
 function UsersSection() {
+  const { isAdmin } = useCurrentUser();
   const [search, setSearch] = useState('');
   const users = useQuery({
     queryKey: ['users', search],
@@ -129,7 +135,7 @@ function UsersSection() {
 
   return (
     <>
-      <Card className="mb-4">
+      {isAdmin && <Card className="mb-4">
         <h2 className="mb-3 font-semibold">Utilizator nou</h2>
         <form onSubmit={createUser} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto_auto]">
           <Input name="username" placeholder="Username" required />
@@ -142,37 +148,43 @@ function UsersSection() {
           </Select>
           <Button type="submit">Creează</Button>
         </form>
-      </Card>
+      </Card>}
 
       <Input placeholder="Caută după username…" value={search} onChange={(event) => setSearch(event.target.value)} className="mb-4" />
       <ErrorMessage error={users.error ?? mutate.error} />
 
       {users.isPending ? <Loading /> : (
         <Card className="p-0">
-          <ul className="divide-y divide-slate-800">
+          <ul className="divide-y divide-white/10">
             {users.data?.map((user) => (
               <li key={user.id} className="flex flex-wrap items-center gap-2 px-4 py-3">
                 <Link to={`/users/${user.id}`} className="min-w-0 flex-1">
                   <p className="truncate font-medium">@{user.username}</p>
-                  <p className="truncate text-xs text-slate-400">#{user.id} · {user.email ?? 'fără email'}</p>
+                  <p className="truncate text-xs text-white/55">#{user.id} · {user.email ?? 'fără email'}</p>
                 </Link>
-                <Select
-                  value={user.role}
-                  onChange={(event) => mutate.mutate({ path: `/users/${user.id}`, method: 'PATCH', body: { role: event.target.value as Role } })}
-                >
-                  <option value="user">user</option>
-                  <option value="moderator">moderator</option>
-                  <option value="admin">admin</option>
-                </Select>
+                {isAdmin ? (
+                  <Select
+                    value={user.role}
+                    onChange={(event) => mutate.mutate({ path: `/users/${user.id}`, method: 'PATCH', body: { role: event.target.value as Role } })}
+                  >
+                    <option value="user">user</option>
+                    <option value="moderator">moderator</option>
+                    <option value="admin">admin</option>
+                  </Select>
+                ) : (
+                  <span className="glass-pill rounded-full px-3 py-1 text-xs font-semibold">{user.role}</span>
+                )}
                 <Button variant="secondary" onClick={() => mutate.mutate({ path: `/users/${user.id}`, method: 'PATCH', body: { is_banned: !user.is_banned } })}>
                   {user.is_banned ? 'Debanează' : 'Banează'}
                 </Button>
                 <Button variant="secondary" onClick={() => mutate.mutate({ path: `/users/${user.id}`, method: 'PATCH', body: { hidden_from_leaderboards: !user.hidden_from_leaderboards } })}>
                   {user.hidden_from_leaderboards ? 'Arată în clasament' : 'Ascunde din clasament'}
                 </Button>
-                <Button variant="danger" onClick={() => confirm(`Ștergi @${user.username} cu tot cu datele lui?`) && mutate.mutate({ path: `/users/${user.id}`, method: 'DELETE' })}>
-                  Șterge
-                </Button>
+                {isAdmin && (
+                  <Button variant="danger" onClick={() => confirm(`Ștergi @${user.username} cu tot cu datele lui?`) && mutate.mutate({ path: `/users/${user.id}`, method: 'DELETE' })}>
+                    Șterge
+                  </Button>
+                )}
               </li>
             ))}
           </ul>
@@ -197,10 +209,10 @@ function PlatformsSection() {
     <>
       <ErrorMessage error={platforms.error ?? mutate.error} />
       <Card className="mb-4 p-0">
-        <ul className="divide-y divide-slate-800">
+        <ul className="divide-y divide-white/10">
           {platforms.data?.map((platform) => (
             <li key={platform.id} className="flex flex-wrap items-center gap-2 px-4 py-3">
-              <span className="w-16 font-mono text-sm text-slate-400">{platform.code}</span>
+              <span className="w-16 font-mono text-sm text-white/55">{platform.code}</span>
               <Input
                 defaultValue={platform.name}
                 className="max-w-xs flex-1"
@@ -215,7 +227,7 @@ function PlatformsSection() {
           ))}
         </ul>
       </Card>
-      <p className="mb-4 text-xs text-slate-500">
+      <p className="mb-4 text-xs text-white/40">
         O platformă cu conturi sau jocuri nu poate fi ștearsă (ON DELETE RESTRICT) — încearcă și vezi eroarea din baza de date.
       </p>
       <Card>

@@ -14,8 +14,8 @@ after(async () => {
 });
 
 // Mic ajutor ca testele să rămână scurte: trimite cererea și întoarce status + body parsat.
-async function call(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, payload?: object) {
-  const response = await ctx.app.inject({ method, url, payload });
+async function call(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, payload?: object, token = ctx.adminToken) {
+  const response = await ctx.app.inject({ method, url, payload, headers: { authorization: `Bearer ${token}` } });
   return { status: response.statusCode, body: response.body ? response.json() : undefined };
 }
 
@@ -175,10 +175,13 @@ describe('prietenii și raportări', () => {
     });
     assert.equal(report.body.status, 'open');
 
+    // resolved_by vine din tokenul moderatorului care face cererea.
+    const moderatorToken = ctx.signAccessToken({ id: moderator.id, role: 'moderator', username: 'mod1' });
     const resolved = await call('PATCH', `/api/reports/${report.body.id}`, {
-      status: 'resolved', resolved_by: moderator.id, resolution_note: 'confirmat',
-    });
+      status: 'resolved', resolution_note: 'confirmat',
+    }, moderatorToken);
     assert.equal(resolved.status, 200);
+    assert.equal(resolved.body.resolved_by, moderator.id);
     assert.ok(resolved.body.resolved_at);
     assert.equal((await call('GET', `/api/users/${cheater.id}`)).body.hidden_from_leaderboards, true);
   });

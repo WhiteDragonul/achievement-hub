@@ -1,14 +1,17 @@
 import type { FastifyInstance } from 'fastify';
+import { assertSelf, requireRole } from '../auth.js';
 import { db } from '../db/db.js';
 import { idParams, notFound, paginationProperties, type IdParams, type Pagination } from './common.js';
 
 type ReportStatus = 'open' | 'resolved' | 'rejected';
 const statuses = ['open', 'resolved', 'rejected'];
 
-type UpdateReportBody = { status?: ReportStatus; resolved_by?: number; resolution_note?: string; reason?: string };
+type UpdateReportBody = { status?: ReportStatus; resolution_note?: string; reason?: string };
 
+// Roluri: orice user poate raporta; moderatorii văd și rezolvă raportările; doar adminul le șterge.
 export async function reportsRoutes(app: FastifyInstance) {
   app.get<{ Querystring: Pagination & { status?: ReportStatus; target_user_id?: number } }>('/reports', {
+    preHandler: requireRole('moderator'),
     schema: {
       querystring: {
         type: 'object',
@@ -30,7 +33,7 @@ export async function reportsRoutes(app: FastifyInstance) {
     return query.execute();
   });
 
-  app.get<{ Params: IdParams }>('/reports/:id', { schema: { params: idParams } }, async (request, reply) => {
+  app.get<{ Params: IdParams }>('/reports/:id', { schema: { params: idParams }, preHandler: requireRole('moderator') }, async (request, reply) => {
     const report = await db.selectFrom('reports').selectAll().where('id', '=', request.params.id).executeTakeFirst();
     return report ?? reply.code(404).send(notFound('Raportarea'));
   });
@@ -45,6 +48,7 @@ export async function reportsRoutes(app: FastifyInstance) {
       },
     },
   }, async (request, reply) => {
+    assertSelf(request, request.body.reporter_id);
     const report = await db.insertInto('reports').values(request.body).returningAll().executeTakeFirstOrThrow();
     return reply.code(201).send(report);
   });
@@ -53,6 +57,7 @@ export async function reportsRoutes(app: FastifyInstance) {
   // deci rulează într-o tranzacție: raportarea primește statusul nou, iar dacă e 'resolved',
   // utilizatorul raportat e ascuns din clasamente.
   app.patch<{ Params: IdParams; Body: UpdateReportBody }>('/reports/:id', {
+    preHandler: requireRole('moderator'),
     schema: {
       params: idParams,
       body: {
@@ -60,7 +65,6 @@ export async function reportsRoutes(app: FastifyInstance) {
         minProperties: 1,
         properties: {
           status: { enum: statuses },
-          resolved_by: { type: 'integer' },
           resolution_note: { type: 'string' },
           reason: { type: 'string' },
         },
@@ -73,7 +77,12 @@ export async function reportsRoutes(app: FastifyInstance) {
 
     const report = await db.transaction().execute(async (trx) => {
       const updated = await trx.updateTable('reports')
-        .set({ ...request.body, resolved_at: resolvedAt })
+        .set({
+          ...request.body,
+          resolved_at: resolvedAt,
+          // Moderatorul care rezolvă e cel din token, nu o valoare trimisă de client.
+          resolved_by: status === undefined ? undefined : status === 'open' ? null : request.user.id,
+        })
         .where('id', '=', request.params.id)
         .returningAll()
         .executeTakeFirst();
@@ -90,7 +99,7 @@ export async function reportsRoutes(app: FastifyInstance) {
     return report ?? reply.code(404).send(notFound('Raportarea'));
   });
 
-  app.delete<{ Params: IdParams }>('/reports/:id', { schema: { params: idParams } }, async (request, reply) => {
+  app.delete<{ Params: IdParams }>('/reports/:id', { schema: { params: idParams }, preHandler: requireRole('admin') }, async (request, reply) => {
     const result = await db.deleteFrom('reports').where('id', '=', request.params.id).executeTakeFirst();
     if (result.numDeletedRows === 0n) return reply.code(404).send(notFound('Raportarea'));
     return reply.code(204).send();

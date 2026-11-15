@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { assertSelf, forbid, hasRole } from '../auth.js';
 import { db } from '../db/db.js';
 import { notFound, paginationProperties, type Pagination } from './common.js';
 
@@ -23,6 +24,8 @@ export async function friendshipsRoutes(app: FastifyInstance) {
     },
   }, async (request) => {
     const { limit, offset, user_id, status } = request.query;
+    // Lista de prieteni a altcuiva o văd doar moderatorii.
+    if (user_id !== request.user.id && !hasRole(request.user, 'moderator')) forbid();
     let query = db.selectFrom('friendships')
       .innerJoin('users as requester', 'requester.id', 'friendships.requester_id')
       .innerJoin('users as addressee', 'addressee.id', 'friendships.addressee_id')
@@ -46,6 +49,7 @@ export async function friendshipsRoutes(app: FastifyInstance) {
     schema: { params: pairParams },
   }, async (request, reply) => {
     const { requesterId, addresseeId } = request.params;
+    if (![requesterId, addresseeId].includes(request.user.id) && !hasRole(request.user, 'moderator')) forbid();
     const friendship = await db.selectFrom('friendships').selectAll()
       .where('requester_id', '=', requesterId)
       .where('addressee_id', '=', addresseeId)
@@ -64,6 +68,7 @@ export async function friendshipsRoutes(app: FastifyInstance) {
       },
     },
   }, async (request, reply) => {
+    assertSelf(request, request.body.requester_id); // cererea pleacă de la userul logat
     const friendship = await db.insertInto('friendships').values(request.body).returningAll().executeTakeFirstOrThrow();
     return reply.code(201).send(friendship);
   });
@@ -76,6 +81,7 @@ export async function friendshipsRoutes(app: FastifyInstance) {
     },
   }, async (request, reply) => {
     const { requesterId, addresseeId } = request.params;
+    assertSelf(request, addresseeId); // doar destinatarul acceptă cererea
     const friendship = await db.updateTable('friendships')
       // CHECK-ul friendships_responded_chk cere responded_at completat când status nu mai e 'pending'.
       .set({ status: 'accepted', responded_at: new Date() })
@@ -91,6 +97,8 @@ export async function friendshipsRoutes(app: FastifyInstance) {
     schema: { params: pairParams },
   }, async (request, reply) => {
     const { requesterId, addresseeId } = request.params;
+    // Oricare dintre cei doi poate anula / refuza prietenia.
+    if (![requesterId, addresseeId].includes(request.user.id) && !hasRole(request.user, 'admin')) forbid();
     const result = await db.deleteFrom('friendships')
       .where('requester_id', '=', requesterId)
       .where('addressee_id', '=', addresseeId)

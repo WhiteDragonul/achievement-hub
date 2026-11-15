@@ -1,8 +1,12 @@
 import Fastify from 'fastify';
 import { sql } from 'kysely';
 import { db } from './db/db.js';
+import { authenticate, requireRole } from './auth.js';
 import { errorHandler } from './errors.js';
+import { authRoutes, meRoutes } from './routes/auth.js';
+import { steamAuthRoutes, steamLinkRoutes } from './routes/steam-auth.js';
 import { achievementsRoutes } from './routes/achievements.js';
+import { exportsRoutes } from './routes/exports.js';
 import { friendshipsRoutes } from './routes/friendships.js';
 import { gamesRoutes } from './routes/games.js';
 import { platformAccountsRoutes } from './routes/platform-accounts.js';
@@ -24,38 +28,50 @@ export function buildServer({ logger = true } = {}) {
     return { status: 'ok' };
   });
 
-  // Câte rânduri are fiecare tabel — ca să vedem rapid că fixtures s-au încărcat.
-  // TODO etapa 3: accesibil doar pentru admin.
-  app.get('/stats', async () => {
-    const { rows } = await sql<{ table_name: string; rows: number }>`
-      SELECT 'users' AS table_name, count(*) AS rows FROM users
-      UNION ALL SELECT 'platform_accounts', count(*) FROM platform_accounts
-      UNION ALL SELECT 'games', count(*) FROM games
-      UNION ALL SELECT 'achievements', count(*) FROM achievements
-      UNION ALL SELECT 'user_games', count(*) FROM user_games
-      UNION ALL SELECT 'user_achievements', count(*) FROM user_achievements
-      UNION ALL SELECT 'friendships', count(*) FROM friendships
-      UNION ALL SELECT 'reports', count(*) FROM reports
-      UNION ALL SELECT 'sync_runs', count(*) FROM sync_runs
-    `.execute(db);
-    return Object.fromEntries(rows.map((row) => [row.table_name, row.rows]));
-  });
+  app.register(async (root) => {
+    // Rute publice: login (email sau Steam), înregistrare, refresh, logout.
+    await root.register(authRoutes);
+    await root.register(steamAuthRoutes);
 
-  // CRUD pentru toate entitățile, sub prefixul /api. Deocamdată fără autentificare: se adaugă în etapa 3.
-  // (refresh_tokens nu are CRUD aici: sesiunile se creează la login și se gestionează în etapa 3.)
-  app.register(async (api) => {
-    await api.register(usersRoutes);
-    await api.register(platformsRoutes);
-    await api.register(platformAccountsRoutes);
-    await api.register(gamesRoutes);
-    await api.register(achievementsRoutes);
-    await api.register(userGamesRoutes);
-    await api.register(userAchievementsRoutes);
-    await api.register(syncRunsRoutes);
-    await api.register(friendshipsRoutes);
-    await api.register(reportsRoutes);
-    // Rute de citire agregate pentru paginile aplicației (clasament, profil, bibliotecă).
-    await api.register(viewsRoutes);
+    // Tot restul cere token de acces. Hook-ul adăugat în acest context (encapsulare Fastify) se aplică
+    // doar rutelor înregistrate aici, nu și celor publice de mai sus.
+    // Regulile pe roluri / proprietar sunt în fiecare fișier de rute (vezi docs/api.md, secțiunea Roluri).
+    await root.register(async (api) => {
+      api.addHook('onRequest', authenticate);
+      await api.register(meRoutes);
+      await api.register(steamLinkRoutes);
+      await api.register(usersRoutes);
+      await api.register(platformsRoutes);
+      await api.register(platformAccountsRoutes);
+      await api.register(gamesRoutes);
+      await api.register(achievementsRoutes);
+      await api.register(userGamesRoutes);
+      await api.register(userAchievementsRoutes);
+      await api.register(syncRunsRoutes);
+      await api.register(friendshipsRoutes);
+      await api.register(reportsRoutes);
+      // Rute de citire agregate pentru paginile aplicației (clasament, profil, bibliotecă).
+      await api.register(viewsRoutes);
+      // Rapoarte descărcabile: CSV, Excel, PDF.
+      await api.register(exportsRoutes);
+
+      // Câte rânduri are fiecare tabel — ca să vedem rapid că fixtures s-au încărcat.
+      api.get('/stats', { preHandler: requireRole('admin') }, async () => {
+        const { rows } = await sql<{ table_name: string; rows: number }>`
+          SELECT 'users' AS table_name, count(*) AS rows FROM users
+          UNION ALL SELECT 'platform_accounts', count(*) FROM platform_accounts
+          UNION ALL SELECT 'games', count(*) FROM games
+          UNION ALL SELECT 'achievements', count(*) FROM achievements
+          UNION ALL SELECT 'user_games', count(*) FROM user_games
+          UNION ALL SELECT 'user_achievements', count(*) FROM user_achievements
+          UNION ALL SELECT 'friendships', count(*) FROM friendships
+          UNION ALL SELECT 'reports', count(*) FROM reports
+          UNION ALL SELECT 'sync_runs', count(*) FROM sync_runs
+          UNION ALL SELECT 'profile_showcase', count(*) FROM profile_showcase
+        `.execute(db);
+        return Object.fromEntries(rows.map((row) => [row.table_name, row.rows]));
+      });
+    });
   }, { prefix: '/api' });
 
   return app;

@@ -4,12 +4,12 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type GameAchievements, type GameDetail, type Platform } from '../api';
-import { useCurrentUser } from '../current-user';
+import { useCurrentUser } from '../auth';
 import { Button, Card, ErrorMessage, Input, Loading, PageTitle, PlatformBadge, ProgressBar, RarityBadge } from '../components/ui';
 
 export function GameDetailPage() {
   const gameId = Number(useParams().id);
-  const { userId } = useCurrentUser();
+  const { userId, isAdmin } = useCurrentUser(); // catalogul (jocul, achievement-urile) îl modifică doar adminul
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editingTitle, setEditingTitle] = useState(false);
@@ -86,10 +86,12 @@ export function GameDetailPage() {
       )}
 
       <div className="mb-4 flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={() => setEditingTitle(!editingTitle)}>Redenumește</Button>
-        <Button variant="danger" onClick={() => confirm('Ștergi jocul cu tot cu achievement-uri și progres?') && deleteGame.mutate()}>
-          Șterge jocul
-        </Button>
+        {isAdmin && <Button variant="secondary" onClick={() => setEditingTitle(!editingTitle)}>Redenumește</Button>}
+        {isAdmin && (
+          <Button variant="danger" onClick={() => confirm('Ștergi jocul cu tot cu achievement-uri și progres?') && deleteGame.mutate()}>
+            Șterge jocul
+          </Button>
+        )}
         {accountId && !achievements.data?.owns_game && (
           <Button onClick={() => mutate.mutate({ path: '/user-games', method: 'POST', body: { platform_account_id: accountId, game_id: gameId } })}>
             Adaugă în biblioteca mea
@@ -108,16 +110,16 @@ export function GameDetailPage() {
 
       {achievements.data?.owns_game && (
         <Card className="mb-4">
-          <p className="mb-2 text-sm text-slate-400">Progresul tău: {unlockedCount} din {list.length}</p>
+          <p className="mb-2 text-sm text-white/55">Progresul tău: {unlockedCount} din {list.length}</p>
           <ProgressBar value={unlockedCount} total={list.length} />
         </Card>
       )}
       {!accountId && (
-        <p className="mb-4 text-sm text-slate-400">Nu ai cont legat pe această platformă, deci nu poți debloca achievement-uri aici.</p>
+        <p className="mb-4 text-sm text-white/55">Nu ai cont legat pe această platformă, deci nu poți debloca achievement-uri aici.</p>
       )}
 
       <Card className="p-0">
-        <ul className="divide-y divide-slate-800">
+        <ul className="divide-y divide-white/10">
           {list.map((achievement) => (
             <li key={achievement.id} className={`flex flex-wrap items-center gap-3 px-4 py-3 ${achievement.unlocked_at ? '' : 'opacity-70'}`}>
               {/* pe telefon textul ocupă tot rândul, iar butoanele trec dedesubt */}
@@ -126,7 +128,7 @@ export function GameDetailPage() {
                   {achievement.unlocked_at && <span className="mr-1 text-green-400">✓</span>}
                   {achievement.name}
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-white/55">
                   {achievement.global_unlock_pct ?? '?'}% dintre jucători
                   {achievement.unlocked_at && ` · deblocat ${new Date(achievement.unlocked_at).toLocaleDateString('ro-RO')}`}
                 </p>
@@ -137,19 +139,21 @@ export function GameDetailPage() {
                   ? <Button variant="secondary" onClick={() => mutate.mutate({ path: `/user-achievements/${accountId}/${achievement.id}`, method: 'DELETE' })}>Anulează</Button>
                   : <Button variant="secondary" onClick={() => mutate.mutate({ path: '/user-achievements', method: 'POST', body: { platform_account_id: accountId, achievement_id: achievement.id } })}>Deblochează</Button>
               )}
-              <Button
-                variant="danger"
-                aria-label={`Șterge ${achievement.name}`}
-                onClick={() => confirm(`Ștergi achievement-ul „${achievement.name}”?`) && mutate.mutate({ path: `/achievements/${achievement.id}`, method: 'DELETE' })}
-              >
-                ✕
-              </Button>
+              {isAdmin && (
+                <Button
+                  variant="danger"
+                  aria-label={`Șterge ${achievement.name}`}
+                  onClick={() => confirm(`Ștergi achievement-ul „${achievement.name}”?`) && mutate.mutate({ path: `/achievements/${achievement.id}`, method: 'DELETE' })}
+                >
+                  ✕
+                </Button>
+              )}
             </li>
           ))}
         </ul>
       </Card>
 
-      <Card className="mt-4">
+      {isAdmin && <Card className="mt-4">
         <h2 className="mb-3 font-semibold">Adaugă achievement</h2>
         <form onSubmit={addAchievement} className="grid gap-3 sm:grid-cols-[1fr_2fr_1fr_auto]">
           <Input name="external_id" placeholder="Id extern" required />
@@ -157,7 +161,7 @@ export function GameDetailPage() {
           <Input name="global_unlock_pct" placeholder="% global (0–100)" type="number" step="0.01" />
           <Button type="submit">Adaugă</Button>
         </form>
-      </Card>
+      </Card>}
     </>
   );
 }

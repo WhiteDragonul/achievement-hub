@@ -12,6 +12,16 @@ export const config = {
   port: Number(process.env.PORT ?? 3000),
   // Cheia pentru pgp_sym_encrypt / pgp_sym_decrypt (tokenurile platformelor, D7). Nu ajunge niciodată în DB.
   tokenEncryptionKey: required('TOKEN_ENCRYPTION_KEY'),
-  seedOnStart: process.env.SEED_ON_START !== 'false',
+  // Cheia HMAC cu care se semnează tokenurile de acces (JWT, D31).
+  jwtSecret: required('JWT_SECRET'),
+  // Unde redirecționează login-ul Steam după succes (aplicația web sau deep-link-ul Tauri).
+  webUrl: process.env.WEB_URL ?? 'http://localhost:5173',
+  publicApiUrl: process.env.PUBLIC_API_URL ?? 'http://localhost:3000',
+  // Steam Web API key (https://steamcommunity.com/dev/apikey). Fără ea, sync-ul Steam eșuează explicit.
+  steamApiKey: process.env.STEAM_API_KEY ?? '',
+  // Fixtures (mii de useri generați) doar la cerere: implicit baza conține doar date reale (D45).
+  seedOnStart: process.env.SEED_ON_START === 'true',
+  // PSN / Xbox / Epic nu au încă un provider real; cu false nu se pot lega conturi pe ele (doar date reale).
+  allowMockPlatforms: process.env.ALLOW_MOCK_PLATFORMS === 'true',
   fixturePassword: process.env.FIXTURE_PASSWORD ?? 'Parola123!',
 };

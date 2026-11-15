@@ -3,11 +3,13 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type Game, type Platform } from '../api';
+import { useCurrentUser } from '../auth';
 import { Button, Card, ErrorMessage, Input, Loading, PageTitle, PlatformBadge, Select } from '../components/ui';
 
 const PAGE_SIZE = 24;
 
 export function GamesPage() {
+  const { isAdmin } = useCurrentUser(); // doar adminul adaugă jocuri în catalog
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [platformId, setPlatformId] = useState('');
@@ -50,13 +52,13 @@ export function GamesPage() {
           placeholder="Caută după titlu…"
           value={search}
           onChange={(event) => { setSearch(event.target.value); setPage(0); }}
-          className="max-w-xs flex-1"
+          className="min-w-48 flex-1 sm:max-w-xs"
         />
         <Select value={platformId} onChange={(event) => { setPlatformId(event.target.value); setPage(0); }}>
           <option value="">Toate platformele</option>
           {platforms.data?.map((platform) => <option key={platform.id} value={platform.id}>{platform.name}</option>)}
         </Select>
-        <Button variant="secondary" onClick={() => setShowForm(!showForm)}>+ Joc nou</Button>
+        {isAdmin && <Button variant="secondary" onClick={() => setShowForm(!showForm)}>+ Joc nou</Button>}
       </div>
 
       {showForm && (
@@ -78,16 +80,16 @@ export function GamesPage() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {games.data?.map((game) => (
             <Link key={game.id} to={`/games/${game.id}`}>
-              <Card className="h-full transition hover:border-indigo-500/60">
+              <Card className="h-full transition hover:bg-white/10">
                 <PlatformBadge code={platformCode(game.platform_id)} />
                 <p className="mt-2 font-medium">{game.title}</p>
-                <p className="mt-1 font-mono text-xs text-slate-500">{game.external_id}</p>
+                <p className="mt-1 font-mono text-xs text-white/40">{game.external_id}</p>
               </Card>
             </Link>
           ))}
         </div>
       )}
-      {games.data?.length === 0 && <p className="text-sm text-slate-400">Niciun joc găsit.</p>}
+      {games.data?.length === 0 && <p className="text-sm text-white/55">Niciun joc găsit.</p>}
 
       <div className="mt-4 flex justify-between">
         <Button variant="secondary" disabled={page === 0} onClick={() => setPage(page - 1)}>Înapoi</Button>

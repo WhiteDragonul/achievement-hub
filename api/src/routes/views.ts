@@ -6,11 +6,34 @@ import { sql } from 'kysely';
 import { db } from '../db/db.js';
 import { idParams, notFound, paginationProperties, type IdParams, type Pagination } from './common.js';
 
-// Scorul unui achievement depinde de raritate: cele rare valorează mult mai mult decât cele comune.
-const rarityPoints = sql`CASE a.rarity WHEN 'ultra_rare' THEN 50 WHEN 'very_rare' THEN 20 WHEN 'rare' THEN 5 ELSE 1 END`;
+type ShowcaseItem = {
+  id: number; name: string; description: string | null; icon_url: string | null; rarity: string;
+  global_unlock_pct: number | null; game_id: number; game_title: string;
+};
 
 export async function viewsRoutes(app: FastifyInstance) {
+  // Ultimele achievement-uri deblocate de un user (profil + alegerea vitrinei), cele mai rare primele la egalitate.
+  app.get<{ Params: IdParams; Querystring: Pagination }>('/users/:id/achievements', {
+    schema: { params: idParams, querystring: { type: 'object', properties: paginationProperties } },
+  }, async (request) => {
+    const { limit, offset } = request.query;
+    const { rows } = await sql<ShowcaseItem & { unlocked_at: Date }>`
+      SELECT a.id, a.name, a.description, a.icon_url, a.rarity, a.global_unlock_pct,
+             g.id AS game_id, g.title AS game_title, ua.unlocked_at
+      FROM platform_accounts pa
+      JOIN user_achievements ua ON ua.platform_account_id = pa.id
+      JOIN achievements a ON a.id = ua.achievement_id
+      JOIN games g ON g.id = a.game_id
+      WHERE pa.user_id = ${request.params.id}
+      ORDER BY ua.unlocked_at DESC, a.global_unlock_pct ASC NULLS LAST
+      LIMIT ${limit} OFFSET ${offset}
+    `.execute(db);
+    return rows;
+  });
+
   // Clasament: global, pe o platformă, sau doar între prietenii unui user.
+  // Citește scorurile precalculate din leaderboard_scores (un rând per user și platformă, migrația 008) în loc să
+  // agrege toate deblocările la fiecare cerere. Scorul: ultra rar 50, foarte rar 20, rar 5, comun 1 punct.
   app.get<{ Querystring: Pagination & { platform_id?: number; friends_of?: number } }>('/leaderboard', {
     schema: {
       querystring: {
@@ -22,7 +45,7 @@ export async function viewsRoutes(app: FastifyInstance) {
     const { limit, offset, platform_id, friends_of } = request.query;
 
     // Filtrele opționale sunt adăugate în SQL doar dacă sunt cerute (sql`` gol altfel).
-    const platformFilter = platform_id ? sql`AND pa.platform_id = ${platform_id}` : sql``;
+    const platformFilter = platform_id ? sql`AND s.platform_id = ${platform_id}` : sql``;
     const friendsFilter = friends_of
       ? sql`AND u.id IN (
               SELECT ${friends_of}::bigint
@@ -35,17 +58,15 @@ export async function viewsRoutes(app: FastifyInstance) {
       rank: number; user_id: number; username: string; display_name: string | null;
       achievements: number; rare_achievements: number; score: number;
     }>`
-      SELECT rank() OVER (ORDER BY sum(${rarityPoints}) DESC) AS rank,
+      SELECT rank() OVER (ORDER BY sum(s.score) DESC) AS rank,
              u.id AS user_id,
              u.username,
              u.display_name,
-             count(*) AS achievements,
-             count(*) FILTER (WHERE a.rarity IN ('ultra_rare', 'very_rare')) AS rare_achievements,
-             sum(${rarityPoints}) AS score
-      FROM users u
-      JOIN platform_accounts pa ON pa.user_id = u.id
-      JOIN user_achievements ua ON ua.platform_account_id = pa.id
-      JOIN achievements a ON a.id = ua.achievement_id
+             sum(s.achievements) AS achievements,
+             sum(s.rare_achievements) AS rare_achievements,
+             sum(s.score) AS score
+      FROM leaderboard_scores s
+      JOIN users u ON u.id = s.user_id
       WHERE NOT u.hidden_from_leaderboards
         AND NOT u.is_banned
         ${platformFilter}
@@ -62,7 +83,10 @@ export async function viewsRoutes(app: FastifyInstance) {
     const userId = request.params.id;
 
     const user = await db.selectFrom('users')
-      .select(['id', 'username', 'display_name', 'avatar_url', 'role', 'is_banned', 'hidden_from_leaderboards', 'created_at'])
+      .select([
+        'id', 'username', 'display_name', 'avatar_url', 'bio', 'accent_color', 'banner', 'favorite_game_id',
+        'role', 'is_banned', 'hidden_from_leaderboards', 'created_at',
+      ])
       .where('id', '=', userId)
       .executeTakeFirst();
     if (!user) return reply.code(404).send(notFound('Utilizatorul'));
@@ -90,10 +114,41 @@ export async function viewsRoutes(app: FastifyInstance) {
       GROUP BY a.rarity
     `.execute(db);
 
+    // Totaluri pentru capul profilului: jocuri distincte, ore jucate, jocuri terminate 100%.
+    const totals = await sql<{ games: number; playtime_minutes: number; perfect_games: number }>`
+      SELECT count(DISTINCT ug.game_id) AS games,
+             coalesce(sum(ug.playtime_minutes), 0) AS playtime_minutes,
+             count(*) FILTER (WHERE g.total > 0 AND g.unlocked = g.total) AS perfect_games
+      FROM platform_accounts pa
+      JOIN user_games ug ON ug.platform_account_id = pa.id
+      CROSS JOIN LATERAL (
+        SELECT (SELECT count(*) FROM achievements a WHERE a.game_id = ug.game_id) AS total,
+               (SELECT count(*) FROM user_achievements ua JOIN achievements a ON a.id = ua.achievement_id
+                WHERE ua.platform_account_id = pa.id AND a.game_id = ug.game_id) AS unlocked
+      ) g
+      WHERE pa.user_id = ${userId}
+    `.execute(db);
+
+    const favoriteGame = user.favorite_game_id
+      ? await db.selectFrom('games').select(['id', 'title', 'icon_url']).where('id', '=', user.favorite_game_id).executeTakeFirst()
+      : undefined;
+
+    const showcase = await sql<ShowcaseItem>`
+      SELECT a.id, a.name, a.description, a.icon_url, a.rarity, a.global_unlock_pct, g.id AS game_id, g.title AS game_title
+      FROM profile_showcase ps
+      JOIN achievements a ON a.id = ps.achievement_id
+      JOIN games g ON g.id = a.game_id
+      WHERE ps.user_id = ${userId}
+      ORDER BY ps.position
+    `.execute(db);
+
     return {
       user,
       accounts: accounts.rows,
       rarity_counts: Object.fromEntries(rarity.rows.map((row) => [row.rarity, row.count])),
+      totals: totals.rows[0],
+      favorite_game: favoriteGame ?? null,
+      showcase: showcase.rows,
     };
   });
 
@@ -106,7 +161,7 @@ export async function viewsRoutes(app: FastifyInstance) {
       game_id: number; title: string; platform_code: string; platform_account_id: number;
       playtime_minutes: number; last_played_at: Date | null; total_achievements: number; unlocked_achievements: number;
     }>`
-      SELECT g.id AS game_id, g.title, p.code AS platform_code, ug.platform_account_id,
+      SELECT g.id AS game_id, g.title, g.icon_url, p.code AS platform_code, ug.platform_account_id,
              ug.playtime_minutes, ug.last_played_at,
              (SELECT count(*) FROM achievements a WHERE a.game_id = g.id) AS total_achievements,
              (SELECT count(*)
