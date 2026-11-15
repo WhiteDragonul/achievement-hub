@@ -1,6 +1,6 @@
 // Rute de citire pentru paginile aplicației: combină mai multe tabele într-un singur răspuns.
 // Interogările sunt scrise ca SQL direct (nu cu query builder-ul), pentru că sunt agregări mai lungi
-// și trebuie să se citească exact ca în EXPLAIN ANALYZE (etapa 4 — Performanță).
+// și trebuie să se citească exact ca în EXPLAIN ANALYZE (etapa 4: Performanță).
 import type { FastifyInstance } from 'fastify';
 import { sql } from 'kysely';
 import { db } from '../db/db.js';

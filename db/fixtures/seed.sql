@@ -1,8 +1,8 @@
 -- Fixtures: date de test generate integral în SQL, cu generate_series + random() (D14).
 -- Rulat de api/src/db/seed.ts într-o singură tranzacție, doar dacă tabelul users e gol.
 -- Parametri setați de seed.ts cu set_config() și citiți aici cu current_setting():
---   seed.password_hash — hash argon2 al parolei FIXTURE_PASSWORD (comun tuturor userilor de test)
---   seed.token_key     — TOKEN_ENCRYPTION_KEY, pentru criptarea tokenurilor mock cu pgcrypto
+--   seed.password_hash: hash argon2 al parolei FIXTURE_PASSWORD (comun tuturor userilor de test)
+--   seed.token_key    : TOKEN_ENCRYPTION_KEY, pentru criptarea tokenurilor mock cu pgcrypto
 --
 -- Volum țintă: ~5.000 useri, ~10.000 conturi de platformă, ~65.000 jocuri deținute, ~650.000 achievement-uri deblocate.
 

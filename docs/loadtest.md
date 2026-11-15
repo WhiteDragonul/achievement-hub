@@ -1,4 +1,4 @@
-# Load test (k6) — etapa 4
+# Load test (k6): etapa 4
 
 Script: [`loadtest/api.js`](../loadtest/api.js).
 
@@ -6,10 +6,10 @@ Script: [`loadtest/api.js`](../loadtest/api.js).
 
 Fiecare utilizator virtual (VU) face ce face un jucător obișnuit, cu o pauză de 1 s între iterații:
 
-1. `GET /api/leaderboard?limit=20` — clasamentul global (cea mai grea interogare, acum din materialized view);
-2. `GET /api/users/:id/profile` — profilul unui user ales aleator dintre cei 5.000 din fixtures;
-3. `GET /api/users/:id/games?limit=12` — biblioteca lui;
-4. `GET /api/games/:id/achievements?user_id=…` — achievement-urile unuia dintre jocuri.
+1. `GET /api/leaderboard?limit=20`: clasamentul global (cea mai grea interogare, acum din materialized view);
+2. `GET /api/users/:id/profile`: profilul unui user ales aleator dintre cei 5.000 din fixtures;
+3. `GET /api/users/:id/games?limit=12`: biblioteca lui;
+4. `GET /api/games/:id/achievements?user_id=…`: achievement-urile unuia dintre jocuri.
 
 Login-ul se face o singură dată (`setup`), pentru că argon2 e lent intenționat (~50 ms / hash) și ar domina măsurătoarea.
 
@@ -46,7 +46,7 @@ Rulat pe 15.11.2026 cu k6 v2.4.0, pe aceeași mașină cu API-ul (Node 24) și u
 - maximul de 146 ms la clasament e un vârf izolat; p95 rămâne sub 15 ms.
 
 **Interpretare:** clasamentul rămâne cea mai lentă rută, dar p95 e de peste 50 de ori sub prag datorită materialized view-ului
-(fără el, doar interogarea dura ~143 ms — vezi [indexes.md](indexes.md), cazul 5). Celelalte rute folosesc indecșii
+(fără el, doar interogarea dura ~143 ms: vezi [indexes.md](indexes.md), cazul 5). Celelalte rute folosesc indecșii
 (PK-uri compuse și cei din 007) și răspund în 1–3 ms.
 
 **Limitări:** API-ul, baza de date și k6 rulează pe aceeași mașină, deci lipsește latența rețelei. Pe Supabase fiecare

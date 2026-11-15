@@ -74,7 +74,7 @@ function Shell() {
 
   return (
     <div className="min-h-dvh md:flex md:gap-6 md:p-5">
-      {/* Sidebar — doar pe ecrane late */}
+      {/* Sidebar: doar pe ecrane late */}
       <aside className="glass-bar sticky top-5 hidden h-[calc(100dvh-2.5rem)] w-64 shrink-0 flex-col rounded-[32px] p-4 md:flex">
         <div className="mb-8 flex items-center gap-3 px-2 pt-2">
           <span className="glass-tint flex h-10 w-10 items-center justify-center rounded-2xl"><Icon name="trophy" /></span>
@@ -105,7 +105,7 @@ function Shell() {
         </div>
       </aside>
 
-      {/* Bara de sus — doar pe telefon; pt-[env(safe-area-inset-top)] = sub notch / Dynamic Island */}
+      {/* Bara de sus: doar pe telefon; pt-[env(safe-area-inset-top)] = sub notch / Dynamic Island */}
       <header className="sticky top-0 z-20 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
         <div className="glass-bar flex items-center justify-between rounded-full py-2 pr-2 pl-5">
           <span className="font-bold tracking-tight">Achievement Hub</span>
@@ -118,7 +118,7 @@ function Shell() {
         <Outlet />
       </main>
 
-      {/* Tab-uri jos — doar pe telefon; plutesc deasupra zonei de gesturi iOS / Android */}
+      {/* Tab-uri jos: doar pe telefon; plutesc deasupra zonei de gesturi iOS / Android */}
       <nav className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 md:hidden">
         <div className="glass-bar relative grid rounded-full p-1.5" style={{ gridTemplateColumns: `repeat(${navItems.length}, 1fr)` }}>
           {active >= 0 && (

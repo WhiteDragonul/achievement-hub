@@ -1,7 +1,7 @@
 // Provider simulat pentru PSN / Xbox / Epic (D36): nu avem acces la API-urile lor, așa că alegem jocuri reale
 // din catalogul platformei (generat de fixtures) și „deblocăm” achievement-uri cu probabilitatea dată de raritatea lor.
 // Rezultatul e determinist: același cont primește mereu aceeași bibliotecă (seed = external_id),
-// deci un sync repetat nu schimbă nimic — exact ca un provider real pentru un cont neschimbat.
+// deci un sync repetat nu schimbă nimic: exact ca un provider real pentru un cont neschimbat.
 import { db } from '../db/db.js';
 import type { AchievementProvider, LinkedAccount, ProviderGame } from './providers.js';
 

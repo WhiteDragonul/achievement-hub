@@ -1,4 +1,4 @@
--- 007 — Indecși pentru interogările aplicației (etapa 4). Măsurătorile EXPLAIN ANALYZE înainte / după: docs/indexes.md,
+-- 007: Indecși pentru interogările aplicației (etapa 4). Măsurătorile EXPLAIN ANALYZE înainte / după: docs/indexes.md,
 -- reproductibile cu `npm run db:explain` (din api/).
 -- Postgres creează automat indecși doar pentru PRIMARY KEY și UNIQUE, NU și pentru cheile străine.
 

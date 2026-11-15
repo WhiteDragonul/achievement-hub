@@ -335,13 +335,13 @@ function EditProfile({ profile, onSaved }: { profile: Profile; onSaved: () => vo
         <label className="block space-y-1.5 text-sm">
           <span className="text-white/60">Joc preferat</span>
           <Select value={favoriteGameId ?? ''} onChange={(e) => setFavoriteGameId(e.target.value ? Number(e.target.value) : null)}>
-            <option value="">— niciunul —</option>
+            <option value="">(niciunul)</option>
             {games.data?.map((game) => <option key={game.game_id} value={game.game_id}>{game.title}</option>)}
           </Select>
         </label>
 
         <div className="space-y-2 text-sm">
-          <span className="text-white/60">Vitrină — alege până la 3 achievement-uri ({showcaseIds.length}/3)</span>
+          <span className="text-white/60">Vitrină: alege până la 3 achievement-uri ({showcaseIds.length}/3)</span>
           {choices.length === 0 && <p className="text-white/45">Niciun achievement deblocat încă. Sincronizează contul Steam.</p>}
           <div className="grid max-h-72 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
             {choices.map((achievement) => {
@@ -441,7 +441,7 @@ function AccountRow({ account, editable, onChange }: { account: ProfileAccount; 
         <ul className="mt-3 space-y-1 border-t border-white/10 pt-3 text-xs text-white/55">
           {history.data?.map((run) => (
             <li key={run.id}>
-              {new Date(run.created_at).toLocaleString('ro-RO')} — <span className="font-medium text-white/90">{run.status}</span>
+              {new Date(run.created_at).toLocaleString('ro-RO')}: <span className="font-medium text-white/90">{run.status}</span>
               {run.status === 'succeeded' && ` · ${run.games_synced} jocuri, ${run.achievements_synced} achievement-uri noi`}
               {run.error_message && ` · ${run.error_message}`}
             </li>

@@ -1,4 +1,4 @@
--- 008 — Clasamentul precalculat (materialized view, etapa 4, D44).
+-- 008: Clasamentul precalculat (materialized view, etapa 4, D44).
 -- Clasamentul agregă TOATE deblocările (~640k rânduri) la fiecare cerere: ~170 ms, și niciun index nu evită
 -- citirea lor, pentru că rezultatul chiar depinde de toate. Soluția: calculăm o dată scorul fiecărui user pe fiecare
 -- platformă și îl păstrăm ca tabel; cererile citesc doar ~20k rânduri precalculate.

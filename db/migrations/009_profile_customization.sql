@@ -1,4 +1,4 @@
--- 009 — Personalizarea profilului (D46)
+-- 009: Personalizarea profilului (D46)
 -- Câmpurile noi au valori implicite, deci userii existenți nu trebuie actualizați.
 
 ALTER TABLE users

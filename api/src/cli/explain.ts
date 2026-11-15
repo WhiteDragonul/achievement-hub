@@ -1,9 +1,9 @@
-// `npm run db:explain` — măsoară efectul indecșilor din 007 și al clasamentului precalculat din 008 (etapa 4).
+// `npm run db:explain`: măsoară efectul indecșilor din 007 și al clasamentului precalculat din 008 (etapa 4).
 // Pentru fiecare caz rulează EXPLAIN (ANALYZE, BUFFERS) de 5 ori „înainte” și de 5 ori „după” și afișează mediana.
 //
 // „Înainte” fără să stricăm baza: fiecare rulare e o tranzacție BEGIN → DROP INDEX → EXPLAIN ANALYZE → ROLLBACK.
 // În Postgres și DDL-ul e tranzacțional, deci ROLLBACK readuce indexul ca și cum n-ar fi fost șters
-// (atenție: cât durează tranzacția, tabelul e blocat — rulați scriptul când aplicația nu e sub încărcare).
+// (atenție: cât durează tranzacția, tabelul e blocat: rulați scriptul când aplicația nu e sub încărcare).
 // Același ROLLBACK anulează și DELETE-ul măsurat în cazul 2.
 import { pool } from '../db/db.js';
 
@@ -75,22 +75,22 @@ const newLeaderboard = `
 
 const cases: Case[] = [
   {
-    title: `1. Câți jucători au deblocat un achievement (achievement_id = ${achievementId}) — index user_achievements_achievement_idx`,
+    title: `1. Câți jucători au deblocat un achievement (achievement_id = ${achievementId}): index user_achievements_achievement_idx`,
     before: { setup: 'DROP INDEX user_achievements_achievement_idx', query: `SELECT count(*) FROM user_achievements WHERE achievement_id = ${achievementId}` },
     after: { query: `SELECT count(*) FROM user_achievements WHERE achievement_id = ${achievementId}` },
   },
   {
-    title: `2. Ștergerea unui achievement (ON DELETE CASCADE în user_achievements) — același index`,
+    title: `2. Ștergerea unui achievement (ON DELETE CASCADE în user_achievements): același index`,
     before: { setup: 'DROP INDEX user_achievements_achievement_idx', query: `DELETE FROM achievements WHERE id = ${achievementId}` },
     after: { query: `DELETE FROM achievements WHERE id = ${achievementId}` },
   },
   {
-    title: `3. Prieteniile unui user (requester_id = X OR addressee_id = X, X = ${friendUserId}) — index friendships_addressee_idx`,
+    title: `3. Prieteniile unui user (requester_id = X OR addressee_id = X, X = ${friendUserId}): index friendships_addressee_idx`,
     before: { setup: 'DROP INDEX friendships_addressee_idx', query: `SELECT * FROM friendships WHERE requester_id = ${friendUserId} OR addressee_id = ${friendUserId}` },
     after: { query: `SELECT * FROM friendships WHERE requester_id = ${friendUserId} OR addressee_id = ${friendUserId}` },
   },
   {
-    title: `4. Ultimele 5 sincronizări ale unui cont (platform_account_id = ${accountId}) — index sync_runs_account_created_idx`,
+    title: `4. Ultimele 5 sincronizări ale unui cont (platform_account_id = ${accountId}): index sync_runs_account_created_idx`,
     before: {
       setup: 'DROP INDEX sync_runs_account_created_idx',
       query: `SELECT * FROM sync_runs WHERE platform_account_id = ${accountId} ORDER BY created_at DESC LIMIT 5`,
@@ -98,7 +98,7 @@ const cases: Case[] = [
     after: { query: `SELECT * FROM sync_runs WHERE platform_account_id = ${accountId} ORDER BY created_at DESC LIMIT 5` },
   },
   {
-    title: '5. Clasamentul global (top 20) — agregare pe toate deblocările vs. materialized view leaderboard_scores',
+    title: '5. Clasamentul global (top 20): agregare pe toate deblocările vs. materialized view leaderboard_scores',
     before: { query: oldLeaderboard },
     after: { query: newLeaderboard },
   },
@@ -117,7 +117,7 @@ for (const item of cases) {
   console.log(summarize(after.plan).join('\n'));
   console.log('```');
   console.log(`Mediană din ${RUNS} rulări: **${before.median.toFixed(3)} ms → ${after.median.toFixed(3)} ms**`);
-  summary.push(`| ${item.title.split(' — ')[0]} | ${before.median.toFixed(3)} | ${after.median.toFixed(3)} | ${(before.median / after.median).toFixed(0)}× |`);
+  summary.push(`| ${item.title.split(': ')[0]} | ${before.median.toFixed(3)} | ${after.median.toFixed(3)} | ${(before.median / after.median).toFixed(0)}× |`);
 }
 console.log(`\n## Rezumat\n\n${summary.join('\n')}`);
 await pool.end();

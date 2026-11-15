@@ -3,9 +3,9 @@
 /* ----------------------------------------------------------------------------
    Liquid Glass (D42): suprafețe translucide care lasă să se vadă fundalul colorat de dedesubt.
    Efectul vine din trei lucruri combinate:
-     1. backdrop-filter: blur + saturate — „sticla” estompează și intensifică ce e în spate;
-     2. o margine subțire luminoasă + umbre interioare — grosimea și reflexia marginii sticlei;
-     3. un reflex (::before) în colțul de sus — lumina care cade pe suprafață.
+     1. backdrop-filter: blur + saturate: „sticla” estompează și intensifică ce e în spate;
+     2. o margine subțire luminoasă + umbre interioare: grosimea și reflexia marginii sticlei;
+     3. un reflex (::before) în colțul de sus: lumina care cade pe suprafață.
    Toate clasele de mai jos sunt utilitare Tailwind (@utility), folosite ca orice altă clasă.
    ---------------------------------------------------------------------------- */
 

@@ -133,7 +133,7 @@ erDiagram
 | `refresh_tokens` | Sesiunile active (refresh token hash-uit) | `token_hash` UNIQUE; `expires_at > created_at`; CASCADE la ștergerea userului |
 | `platforms` | Steam / PSN / Xbox / Epic (date de referință) | `code` UNIQUE + format; RESTRICT la ștergere dacă are conturi sau jocuri |
 | `platform_accounts` | Un cont de platformă legat de un user | max. 1 cont per platformă per user; un cont extern legat de max. 1 user |
-| `games` | Catalogul de jocuri per platformă | `(platform_id, external_id)` UNIQUE — cheia naturală folosită la sync (upsert) |
+| `games` | Catalogul de jocuri per platformă | `(platform_id, external_id)` UNIQUE: cheia naturală folosită la sync (upsert) |
 | `achievements` | Achievement-urile unui joc + raritatea globală | `(game_id, external_id)` UNIQUE; procent 0–100; `rarity` coloană generată |
 | `user_games` | Jocurile deținute de un cont + timp jucat | PK compus; `playtime_minutes >= 0` |
 | `user_achievements` | Ce a deblocat fiecare cont și când | PK compus (nu poți debloca de 2 ori); dată ≥ 2000 |
@@ -148,15 +148,15 @@ erDiagram
 - **Raritate:** `achievements.global_unlock_pct` (de la platformă) → `rarity`.
 - **Clasamente:** numărul de achievement-uri (sau scor ponderat cu raritatea) per user, excluzând `hidden_from_leaderboards`;
   global sau doar între prieteni (`friendships` cu `status = 'accepted'`).
-- **Roluri:** `user` — propriul profil, conturi, prieteni, raportări; `moderator` — rezolvă raportări, ascunde useri din
-  clasamente, editează catalogul de jocuri/achievement-uri; `admin` — tot, plus gestionarea userilor/rolurilor/platformelor
+- **Roluri:** `user`: propriul profil, conturi, prieteni, raportări; `moderator`: rezolvă raportări, ascunde useri din
+  clasamente, editează catalogul de jocuri/achievement-uri; `admin`: tot, plus gestionarea userilor/rolurilor/platformelor
   și rapoartele globale.
 
 ## Ce lipsește intenționat
 
-- Indecși de performanță (în afara celor din PK/UNIQUE) — vin în etapa 7, cu EXPLAIN ANALYZE înainte/după (D10).
-- Tabelul de evidență a migrațiilor (`schema_migrations`) — îl creează runner-ul de migrații din etapa 2.
-- Tabelele pg-boss — pg-boss își creează singur schema `pgboss` la pornire.
+- Indecși de performanță (în afara celor din PK/UNIQUE): vin în etapa 7, cu EXPLAIN ANALYZE înainte/după (D10).
+- Tabelul de evidență a migrațiilor (`schema_migrations`): îl creează runner-ul de migrații din etapa 2.
+- Tabelele pg-boss: pg-boss își creează singur schema `pgboss` la pornire.
 
 ## Personalizarea profilului (migrația 009, D46)
 

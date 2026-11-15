@@ -1,4 +1,4 @@
-// Tipurile tabelelor pentru Kysely — oglindesc 1:1 migrațiile din db/migrations.
+// Tipurile tabelelor pentru Kysely: oglindesc 1:1 migrațiile din db/migrations.
 // Când schimbi o migrație, schimbi și aici.
 //
 // ColumnType<Select, Insert, Update>:

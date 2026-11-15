@@ -61,7 +61,7 @@ export function buildServer({ logger = true } = {}) {
       // Rapoarte descărcabile: CSV, Excel, PDF.
       await api.register(exportsRoutes);
 
-      // Câte rânduri are fiecare tabel — ca să vedem rapid că fixtures s-au încărcat.
+      // Câte rânduri are fiecare tabel: ca să vedem rapid că fixtures s-au încărcat.
       api.get('/stats', { preHandler: requireRole('admin') }, async () => {
         const { rows } = await sql<{ table_name: string; rows: number }>`
           SELECT 'users' AS table_name, count(*) AS rows FROM users

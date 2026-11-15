@@ -1,4 +1,4 @@
-// `npm run user:role -- <username> <user|moderator|admin>` — schimbă rolul unui user direct în DB.
+// `npm run user:role -- <username> <user|moderator|admin>`: schimbă rolul unui user direct în DB.
 // Fără fixtures nu există niciun admin: primul admin se numește din linia de comandă (cine are acces la server).
 import { db } from '../db/db.js';
 import type { Role } from '../db/types.js';

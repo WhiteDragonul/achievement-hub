@@ -1,8 +1,8 @@
 // Rapoarte (etapa 5, D39–D41):
-//  - CSV   — achievement-urile deblocate ale unui user, generate direct de Postgres cu COPY ... TO STDOUT și trimise
+//  - CSV  : achievement-urile deblocate ale unui user, generate direct de Postgres cu COPY ... TO STDOUT și trimise
 //            ca stream: serverul nu ține tot fișierul în memorie, oricât de mare ar fi;
-//  - Excel — biblioteca unui user (foaie „Jocuri”) + rezumat pe raritate (foaie „Raritate”), cu exceljs;
-//  - PDF   — raport de ansamblu pentru moderatori: volume, platforme, top 10, raritate, moderare, sincronizări (pdfkit).
+//  - Excel: biblioteca unui user (foaie „Jocuri”) + rezumat pe raritate (foaie „Raritate”), cu exceljs;
+//  - PDF  : raport de ansamblu pentru moderatori: volume, platforme, top 10, raritate, moderare, sincronizări (pdfkit).
 import type { FastifyInstance } from 'fastify';
 import { createRequire } from 'node:module';
 import ExcelJS from 'exceljs';
@@ -155,7 +155,7 @@ export async function exportsRoutes(app: FastifyInstance) {
       sql<{ status: string; n: number }>`SELECT status, count(*) AS n FROM sync_runs GROUP BY status ORDER BY status`.execute(db),
     ]);
 
-    const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Title: 'Achievement Hub — raport general' } });
+    const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Title: 'Achievement Hub: raport general' } });
     doc.registerFont('regular', FONT);
     doc.registerFont('bold', FONT_BOLD);
 
@@ -178,7 +178,7 @@ export async function exportsRoutes(app: FastifyInstance) {
     };
     const number = (n: number) => n.toLocaleString('ro-RO');
 
-    doc.font('bold').fontSize(20).fillColor('#111827').text('Achievement Hub — raport general');
+    doc.font('bold').fontSize(20).fillColor('#111827').text('Achievement Hub: raport general');
     doc.font('regular').fontSize(10).fillColor('#6b7280')
       .text(`Generat la ${new Date().toLocaleString('ro-RO')} de ${request.user.username}`);
 

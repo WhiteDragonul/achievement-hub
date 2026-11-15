@@ -44,7 +44,7 @@ export function LoginPage() {
             <Icon name="trophy" className="h-8 w-8" />
           </span>
           <h1 className="text-3xl font-bold tracking-tight">Achievement Hub</h1>
-          <p className="mt-2 text-sm text-white/55">Toate trofeele tale — Steam, PlayStation, Xbox, Epic — într-un singur profil.</p>
+          <p className="mt-2 text-sm text-white/55">Toate trofeele tale (Steam, PlayStation, Xbox, Epic) într-un singur profil.</p>
         </div>
 
         <div className="glass rounded-[32px] p-5">

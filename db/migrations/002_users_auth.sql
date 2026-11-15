@@ -1,4 +1,4 @@
--- 002 — Utilizatori și sesiuni
+-- 002: Utilizatori și sesiuni
 
 CREATE TABLE users (
     id                       bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

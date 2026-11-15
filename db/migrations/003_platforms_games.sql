@@ -1,4 +1,4 @@
--- 003 — Platforme, conturi legate, catalogul de jocuri și achievement-uri
+-- 003: Platforme, conturi legate, catalogul de jocuri și achievement-uri
 
 CREATE TABLE platforms (
     id      smallint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

@@ -1,4 +1,4 @@
-# Indecși și optimizări — EXPLAIN ANALYZE înainte / după (etapa 4)
+# Indecși și optimizări: EXPLAIN ANALYZE înainte / după (etapa 4)
 
 Migrații: [`007_indexes.sql`](../db/migrations/007_indexes.sql) (3 indecși) și
 [`008_leaderboard_view.sql`](../db/migrations/008_leaderboard_view.sql) (clasamentul precalculat).
@@ -16,10 +16,10 @@ baza: fiecare rulare e o tranzacție `BEGIN → DROP INDEX → EXPLAIN ANALYZE �
 tranzacțional, deci `ROLLBACK` readuce indexul. Același `ROLLBACK` anulează și `DELETE`-ul măsurat în cazul 2.
 Valorile (id-urile) sunt alese automat dintre cele mai „populare” din baza curentă.
 
-**Date:** fixtures generate la pornire — 5.003 useri, 9.928 conturi legate, 13.940 achievement-uri,
+**Date:** fixtures generate la pornire: 5.003 useri, 9.928 conturi legate, 13.940 achievement-uri,
 638.642 `user_achievements`, 24.984 prietenii, 10.419 sincronizări. Postgres 18, local (fără latența rețelei),
 cache cald (`shared hit` = pagini citite din memorie).
-Pe Supabase timpii absoluți diferă, dar planurile și raportul înainte/după rămân aceleași — se poate verifica
+Pe Supabase timpii absoluți diferă, dar planurile și raportul înainte/după rămân aceleași: se poate verifica
 rulând aceeași comandă cu `.env`-ul de Supabase.
 
 ## Rezumat
@@ -37,33 +37,33 @@ rulând aceeași comandă cu `.env`-ul de Supabase.
 **Postgres creează automat indecși doar pentru `PRIMARY KEY` și `UNIQUE`, nu și pentru cheile străine.**
 Un index compus `(a, b)` poate fi folosit pentru căutări după `a` sau după `a` și `b`, dar nu doar după `b`.
 
-1. **`user_achievements (achievement_id)`** — PK-ul e `(platform_account_id, achievement_id)`, deci căutarea doar după
-   `achievement_id` citea tot tabelul (Parallel Seq Scan, 4.068 de pagini). Cu indexul: *Index Only Scan*, 4 pagini —
+1. **`user_achievements (achievement_id)`**: PK-ul e `(platform_account_id, achievement_id)`, deci căutarea doar după
+   `achievement_id` citea tot tabelul (Parallel Seq Scan, 4.068 de pagini). Cu indexul: *Index Only Scan*, 4 pagini,
    Postgres nici nu mai citește tabelul, numărul vine direct din index.
-2. **Același index, la ștergere** — `ON DELETE CASCADE` e implementat ca un trigger care caută rândurile copil după cheia
+2. **Același index, la ștergere**: `ON DELETE CASCADE` e implementat ca un trigger care caută rândurile copil după cheia
    străină. Fără index, ștergerea unui singur achievement (sau a unui joc, care șterge zeci de achievement-uri)
    scana toate cele ~640k deblocări pentru fiecare achievement. În plan se vede direct:
    `Trigger for constraint user_achievements_achievement_id_fkey`.
-3. **`friendships (addressee_id)`** — condiția `requester_id = X OR addressee_id = X` folosea doar PK-ul pentru prima
+3. **`friendships (addressee_id)`**: condiția `requester_id = X OR addressee_id = X` folosea doar PK-ul pentru prima
    parte, deci planificatorul alegea Seq Scan. Cu indexul, Postgres combină două scanări de index cu **BitmapOr**.
    Tabelul e mic (25k rânduri), dar interogarea rulează la fiecare deschidere a paginii Prieteni și la filtrul
    „Doar prietenii” din clasament.
-4. **`sync_runs (platform_account_id, created_at DESC)`** — indexul compus întoarce rândurile deja în ordinea cerută:
+4. **`sync_runs (platform_account_id, created_at DESC)`**: indexul compus întoarce rândurile deja în ordinea cerută:
    dispare nodul `Sort`, iar `LIMIT 5` se oprește după primele 5 intrări din index.
-5. **Clasamentul → materialized view** — clasamentul agregă *toate* deblocările (3 × Hash Join peste ~640k rânduri),
+5. **Clasamentul → materialized view**: clasamentul agregă *toate* deblocările (3 × Hash Join peste ~640k rânduri),
    deci niciun index nu poate evita citirea lor: rezultatul chiar depinde de toate. `leaderboard_scores` păstrează
    scorul precalculat al fiecărui user pe fiecare platformă (~10k rânduri); cererea citește 266 de pagini în loc de 5.781.
    **Compromisul:** datele pot fi „vechi” câteva minute. Worker-ul face `REFRESH MATERIALIZED VIEW CONCURRENTLY` după
    fiecare sync și la fiecare 5 minute (job programat în pg-boss). `CONCURRENTLY` cere un index unic pe view
    (`leaderboard_scores_uq`) și lasă clasamentul vechi vizibil cât timp se calculează cel nou.
 
-**Ce nu am indexat:** `games` (471 de rânduri) și `reports` (300) — tabele atât de mici încât Seq Scan e deja sub 0,1 ms;
+**Ce nu am indexat:** `games` (471 de rânduri) și `reports` (300): tabele atât de mici încât Seq Scan e deja sub 0,1 ms;
 un index ar costa la fiecare `INSERT` fără câștig măsurabil. Fiecare index încetinește scrierile (trebuie actualizat
 la fiecare `INSERT`/`UPDATE`/`DELETE`) și ocupă spațiu, deci îl adăugăm doar unde o interogare reală îl folosește.
 
 ## Planurile complete (rezumate)
 
-### 1. Câți jucători au deblocat un achievement (achievement_id = 13563) — index user_achievements_achievement_idx
+### 1. Câți jucători au deblocat un achievement (achievement_id = 13563): index user_achievements_achievement_idx
 
 Înainte:
 ```
@@ -82,7 +82,7 @@ Pagini citite: 7
 ```
 Mediană din 5 rulări: **28.764 ms → 0.046 ms**
 
-### 2. Ștergerea unui achievement (ON DELETE CASCADE în user_achievements) — același index
+### 2. Ștergerea unui achievement (ON DELETE CASCADE în user_achievements): același index
 
 Înainte:
 ```
@@ -100,7 +100,7 @@ Pagini citite: 5
 ```
 Mediană din 5 rulări: **19.688 ms → 0.136 ms**
 
-### 3. Prieteniile unui user (requester_id = X OR addressee_id = X, X = 2042) — index friendships_addressee_idx
+### 3. Prieteniile unui user (requester_id = X OR addressee_id = X, X = 2042): index friendships_addressee_idx
 
 Înainte:
 ```
@@ -119,7 +119,7 @@ Pagini citite: 22
 ```
 Mediană din 5 rulări: **0.871 ms → 0.026 ms**
 
-### 4. Ultimele 5 sincronizări ale unui cont (platform_account_id = 9720) — index sync_runs_account_created_idx
+### 4. Ultimele 5 sincronizări ale unui cont (platform_account_id = 9720): index sync_runs_account_created_idx
 
 Înainte:
 ```
@@ -135,7 +135,7 @@ Pagini citite: 4
 ```
 Mediană din 5 rulări: **0.283 ms → 0.012 ms**
 
-### 5. Clasamentul global (top 20) — agregare pe toate deblocările vs. materialized view leaderboard_scores
+### 5. Clasamentul global (top 20): agregare pe toate deblocările vs. materialized view leaderboard_scores
 
 Înainte:
 ```

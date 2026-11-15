@@ -1,4 +1,4 @@
-# Achievement Hub — documentul de prezentare
+# Achievement Hub: documentul de prezentare
 
 Proiect individual, Baze de date avansate. Documentul se completează la fiecare etapă de verificare.
 
@@ -13,7 +13,7 @@ Proiect individual, Baze de date avansate. Documentul se completează la fiecare
 
 ---
 
-## 0. Tema — domeniul aplicației
+## 0. Tema: domeniul aplicației
 
 ### Problema
 Un jucător are de obicei conturi pe mai multe platforme: Steam, PlayStation, Xbox, Epic Games. Fiecare platformă își ține
@@ -122,10 +122,10 @@ Descrierea completă, cu capturi de ecran, rolurile, tabelele și operațiile fi
 **Parole:** stocate doar ca hash **argon2id** (sarea și parametrii sunt în același string). La login, `argon2.verify`
 recalculează hash-ul parolei primite. Mesajul de eroare e același pentru email inexistent și parolă greșită.
 
-**Sesiuni — două tokenuri:**
-- **token de acces** — JWT semnat HS256, valabil 15 minute, trimis în `Authorization: Bearer …`. API-ul verifică doar
+**Sesiuni: două tokenuri:**
+- **token de acces**: JWT semnat HS256, valabil 15 minute, trimis în `Authorization: Bearer …`. API-ul verifică doar
   semnătura și expirarea (fără interogare în DB);
-- **refresh token** — 32 de octeți aleatori, valabil 30 de zile. În tabelul `refresh_tokens` e doar `sha256(token)`.
+- **refresh token**: 32 de octeți aleatori, valabil 30 de zile. În tabelul `refresh_tokens` e doar `sha256(token)`.
   La fiecare reînnoire tokenul vechi e revocat (rotație); refolosirea unui token revocat revocă toate sesiunile userului.
 
 **Roluri (`users.role`, CHECK în DB):** `user`, `moderator`, `admin`, ierarhice. Verificarea e în API pe fiecare rută
@@ -134,7 +134,7 @@ recalculează hash-ul parolei primite. Mesajul de eroare e același pentru email
 **Login cu Steam (OpenID 2.0):** API-ul redirecționează la Steam, Steam confirmă SteamID-ul, API-ul verifică răspunsul
 direct la Steam (`check_authentication`), apoi găsește sau creează userul și trimite tokenurile clientului.
 
-**Extra — sincronizare (3b):** butonul „Sincronizează” creează un rând `sync_runs` (`queued`) și un job **pg-boss**;
+**Extra: sincronizare (3b):** butonul „Sincronizează” creează un rând `sync_runs` (`queued`) și un job **pg-boss**;
 worker-ul ia datele de la provider (Steam Web API real sau `MockProvider` pentru PSN/Xbox/Epic) și le scrie într-o
 singură tranzacție cu UPSERT. Statusul trece `queued → running → succeeded / failed`, iar pagina îl urmărește live.
 
@@ -155,15 +155,15 @@ Detalii și planuri complete: [indexes.md](indexes.md). Măsurat cu `npm run db:
 | materialized view `leaderboard_scores` | clasamentul global | 143 ms | 7,1 ms |
 
 **Load test** ([loadtest.md](loadtest.md)): k6, până la 50 de utilizatori virtuali, scenariul unui jucător
-(clasament → profil → bibliotecă → joc). 9.958 cereri, 0 erori; p95: clasament 14,9 ms, celelalte rute sub 3,4 ms —
+(clasament → profil → bibliotecă → joc). 9.958 cereri, 0 erori; p95: clasament 14,9 ms, celelalte rute sub 3,4 ms,
 toate pragurile trecute.
 
 ## 5. Rapoarte
 
 | Raport | Unde în aplicație | Cum e generat |
 |---|---|---|
-| **CSV** — achievement-urile deblocate | Profil → „CSV” | `COPY (SELECT …) TO STDOUT WITH (FORMAT csv, HEADER)`: Postgres scrie CSV-ul, API-ul îl trimite ca stream |
-| **Excel** — biblioteca + rezumat pe raritate | Profil → „Excel” | exceljs: două foi, coloana Progres e formulă Excel, antet înghețat, filtru |
-| **PDF** — raport general | Admin → „Raport PDF” (moderator, admin) | pdfkit: volume, platforme, top 10, raritate, moderare, sincronizări; font DejaVu (diacritice) |
+| **CSV**: achievement-urile deblocate | Profil → „CSV” | `COPY (SELECT …) TO STDOUT WITH (FORMAT csv, HEADER)`: Postgres scrie CSV-ul, API-ul îl trimite ca stream |
+| **Excel**: biblioteca + rezumat pe raritate | Profil → „Excel” | exceljs: două foi, coloana Progres e formulă Excel, antet înghețat, filtru |
+| **PDF**: raport general | Admin → „Raport PDF” (moderator, admin) | pdfkit: volume, platforme, top 10, raritate, moderare, sincronizări; font DejaVu (diacritice) |
 
 Rapoartele respectă rolurile: CSV/Excel doar pentru propriul profil (sau admin), PDF doar pentru moderatori.

@@ -228,7 +228,7 @@ function PlatformsSection() {
         </ul>
       </Card>
       <p className="mb-4 text-xs text-white/40">
-        O platformă cu conturi sau jocuri nu poate fi ștearsă (ON DELETE RESTRICT) — încearcă și vezi eroarea din baza de date.
+        O platformă cu conturi sau jocuri nu poate fi ștearsă (ON DELETE RESTRICT): încearcă și vezi eroarea din baza de date.
       </p>
       <Card>
         <h2 className="mb-3 font-semibold">Platformă nouă</h2>

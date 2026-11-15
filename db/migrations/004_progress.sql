@@ -1,4 +1,4 @@
--- 004 — Progresul utilizatorilor (tabelele mari: aici vor fi sutele de mii de rânduri)
+-- 004: Progresul utilizatorilor (tabelele mari: aici vor fi sutele de mii de rânduri)
 -- Legate de platform_account_id, nu de user_id: dezlegarea unui cont șterge în cascadă progresul lui (D5).
 
 CREATE TABLE user_games (

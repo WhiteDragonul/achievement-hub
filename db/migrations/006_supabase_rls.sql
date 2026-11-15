@@ -1,4 +1,4 @@
--- 006 — Row Level Security (specific Supabase, D1)
+-- 006: Row Level Security (specific Supabase, D1)
 -- Supabase expune automat schema "public" printr-un API REST pentru rolurile anon/authenticated.
 -- RLS activat FĂRĂ politici = acele roluri nu văd niciun rând. Backend-ul se conectează ca "postgres",
 -- proprietarul tabelelor, pe care RLS nu îl afectează. Pe un Postgres obișnuit comenzile sunt inofensive.

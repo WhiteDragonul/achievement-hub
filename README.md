@@ -6,7 +6,7 @@ Profil unificat de achievement-uri pentru Steam, PlayStation, Xbox și Epic. Pro
 
 1. Copiază `.env.example` în `.env` și completează `DATABASE_URL` (Supabase → **Connect** → **Session pooler**),
    `TOKEN_ENCRYPTION_KEY` și `JWT_SECRET` (opțional `STEAM_API_KEY` pentru sync-ul Steam real).
-2. `docker compose up --build` — pornește `api`, `worker` (sync + reîmprospătarea clasamentului) și `web`.
+2. `docker compose up --build`: pornește `api`, `worker` (sync + reîmprospătarea clasamentului) și `web`.
 
 La pornire API-ul aplică migrațiile lipsă din `db/migrations`, apoi ascultă pe http://localhost:3000.
 Interfața: http://localhost:8080. Verificare rapidă: http://localhost:3000/health.
@@ -46,7 +46,7 @@ Comenzi utile (în `api/`): `npm test`, `npm run db:migrate`, `npm run db:seed`,
 înainte/după pentru indecși), `npm run typecheck`. Load test: `k6 run loadtest/api.js` ([docs/loadtest.md](docs/loadtest.md)).
 
 ## Prezentare de pe telefon (GitHub Pages)
-Frontend: https://whitedragonul.github.io/achievement-hub/ — API-ul rulează pe laptop, expus printr-un tunel Cloudflare (D48).
+Frontend: https://whitedragonul.github.io/achievement-hub/: API-ul rulează pe laptop, expus printr-un tunel Cloudflare (D48).
 Cu baza de date pornită și API-ul / worker-ul locale oprite (folosesc portul 3000):
 ```bash
 node scripts/present.mjs

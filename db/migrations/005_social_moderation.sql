@@ -1,4 +1,4 @@
--- 005 — Prieteni și raportări (moderare)
+-- 005: Prieteni și raportări (moderare)
 
 CREATE TABLE friendships (
     requester_id bigint      NOT NULL REFERENCES users (id) ON DELETE CASCADE,

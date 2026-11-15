@@ -161,7 +161,7 @@ Pe telefon, butoanele fiecărui achievement trec sub text:
 - **Rezolvă**: raportarea devine `resolved`, iar userul raportat e ascuns din clasamente, ambele în aceeași tranzacție;
 - **Respinge** (`rejected`), **Șterge**.
 
-**Utilizatori** (admin): căutare, creare (username, email, parolă — salvată ca hash argon2 —, rol), schimbarea rolului
+**Utilizatori** (admin): căutare, creare (username, email, parolă salvată ca hash argon2, rol), schimbarea rolului
 din listă, **Banează** / **Debanează**, **Ascunde din clasament**, **Șterge** (cu toate datele userului, în cascadă).
 
 **Platforme** (admin): redenumire (la ieșirea din câmp), comutare Mock/Real, adăugare, ștergere. O platformă care are
