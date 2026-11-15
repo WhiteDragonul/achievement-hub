@@ -78,7 +78,6 @@ export function LoginPage() {
             Continuă cu Steam
           </a>
         </div>
-        <p className="mt-5 text-center text-xs text-white/35">Cont demo: demo@achievementhub.test · Parola123!</p>
       </div>
     </div>
   );
