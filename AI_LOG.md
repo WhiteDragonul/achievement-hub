@@ -163,3 +163,10 @@ deep-link Steam și CORS pentru originile Tauri (D51); workflow `app.yml` (Windo
 rulat pe iPhone 18 Pro (pagina de login). Testele API: 21/25, aceleași 4 eșecuri ca înainte de modificări.
 **Neverificat:** deploy-ul pe Render și conexiunea la Supabase (cer contul autorului); build-ul Windows (rulează doar în CI);
 login-ul Steam prin deep-link (cere API-ul găzduit).
+
+## Interfața în engleză (2026-11-18)
+**Prompt:** „vreau să fie în engleză toată aplicația”.
+**Rezultat:** toate textele din `web/src` (pagini, navigare, formulare, stări goale, confirmări), `lang="en"`, date și
+numere `en-US`; mesajele API (`errors.ts`, rute, Steam), antetele CSV, foile Excel și raportul PDF în engleză (D52).
+Reparat în trecere: culoarea pusă pe `<html>` acoperea scena din fundal; acum doar `<html>` are fundal.
+**Verificat:** `tsc` și build (web, api); testele API 23/25 (cele 2 eșecuri existau și înainte); în browser cu API simulat.

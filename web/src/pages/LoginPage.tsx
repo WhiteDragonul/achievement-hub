@@ -8,8 +8,8 @@ import { Logo } from '../components/Layout';
 import { Button, ErrorMessage, Field, Input, Segmented, rarityStyles } from '../components/ui';
 
 const modes = [
-  { id: 'login', label: 'Autentificare' },
-  { id: 'register', label: 'Cont nou' },
+  { id: 'login', label: 'Sign in' },
+  { id: 'register', label: 'New account' },
 ] as const;
 
 export function LoginPage() {
@@ -49,11 +49,11 @@ export function LoginPage() {
         <div className="rise max-w-lg">
           <p className="eyebrow mb-5">Steam · PlayStation · Xbox · Epic</p>
           <h1 className="font-display font-extrabold tracking-[-0.03em] text-[68px] leading-[0.98]">
-            Fiecare trofeu,<br /><em className="bg-gradient-to-r from-[#ffe2a6] to-[#ffa8cf] bg-clip-text not-italic text-transparent">într-un singur loc.</em>
+            Every trophy,<br /><em className="bg-gradient-to-r from-[#ffe2a6] to-[#ffa8cf] bg-clip-text not-italic text-transparent">in one place.</em>
           </h1>
           <p className="mt-6 max-w-md leading-relaxed text-muted">
-            Leagă-ți conturile, iar biblioteca și achievement-urile se sincronizează într-un profil unificat,
-            cu raritate, clasamente și prieteni.
+            Link your accounts and your library and achievements sync into one unified profile,
+            with rarity, leaderboards and friends.
           </p>
         </div>
 
@@ -66,13 +66,13 @@ export function LoginPage() {
           <div className="mb-10 lg:hidden">
             <Logo size={40} />
             <h1 className="mt-6 font-display font-extrabold tracking-[-0.03em] text-[44px] leading-none">
-              Fiecare trofeu, <em className="bg-gradient-to-r from-[#ffe2a6] to-[#ffa8cf] bg-clip-text not-italic text-transparent">într-un singur loc.</em>
+              Every trophy, <em className="bg-gradient-to-r from-[#ffe2a6] to-[#ffa8cf] bg-clip-text not-italic text-transparent">in one place.</em>
             </h1>
           </div>
 
-          <h2 className="text-xl font-semibold tracking-tight">{mode === 'login' ? 'Bine ai revenit' : 'Creează-ți contul'}</h2>
+          <h2 className="text-xl font-semibold tracking-tight">{mode === 'login' ? 'Welcome back' : 'Create your account'}</h2>
           <p className="mt-1 mb-7 text-sm text-muted">
-            {mode === 'login' ? 'Intră cu emailul sau direct cu Steam.' : 'Durează câteva secunde. Platformele le legi după.'}
+            {mode === 'login' ? 'Sign in with email or straight with Steam.' : 'It takes a few seconds. You link platforms afterwards.'}
           </p>
 
           <a
@@ -84,25 +84,25 @@ export function LoginPage() {
             <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="currentColor" aria-hidden>
               <path d="M12 2a10 10 0 0 0-9.96 9.04l5.35 2.21a2.83 2.83 0 0 1 1.6-.49l2.39-3.46v-.05a3.78 3.78 0 1 1 3.78 3.78h-.09l-3.4 2.43a2.84 2.84 0 0 1-5.62.56L2.2 14.4A10 10 0 1 0 12 2Zm-3.73 15.17-1.22-.5a2.13 2.13 0 1 0 1.16-2.91l1.27.52a1.57 1.57 0 1 1-1.21 2.9Zm9.45-7.84a2.52 2.52 0 1 0-2.52 2.52 2.52 2.52 0 0 0 2.52-2.52Zm-4.4 0a1.89 1.89 0 1 1 1.89 1.89 1.89 1.89 0 0 1-1.9-1.89Z" />
             </svg>
-            Continuă cu Steam
+            Continue with Steam
           </a>
 
           <div className="my-6 flex items-center gap-3">
-            <span className="h-px flex-1 bg-line" /><span className="eyebrow">sau cu email</span><span className="h-px flex-1 bg-line" />
+            <span className="h-px flex-1 bg-line" /><span className="eyebrow">or with email</span><span className="h-px flex-1 bg-line" />
           </div>
 
           <Segmented options={modes} value={mode} onChange={(value) => { setMode(value); setError(null); }} className="mb-5" />
           <ErrorMessage error={error} />
           <form onSubmit={submit} className="space-y-4">
             {mode === 'register' && (
-              <Field label="Username" hint="3–32: litere, cifre, _">
+              <Field label="Username" hint="3–32: letters, digits, _">
                 <Input name="username" autoComplete="username" required />
               </Field>
             )}
             <Field label="Email">
               <Input name="email" type="email" autoComplete="email" required />
             </Field>
-            <Field label="Parolă" hint={mode === 'register' ? 'min. 8 caractere' : undefined}>
+            <Field label="Password" hint={mode === 'register' ? 'min. 8 characters' : undefined}>
               <Input
                 name="password"
                 type="password"
@@ -112,7 +112,7 @@ export function LoginPage() {
               />
             </Field>
             <Button type="submit" disabled={busy} className="mt-2 w-full !min-h-11">
-              {busy ? 'Se verifică…' : mode === 'login' ? 'Intră în cont' : 'Creează contul'}
+              {busy ? 'Checking…' : mode === 'login' ? 'Sign in' : 'Create account'}
             </Button>
           </form>
         </div>
@@ -132,13 +132,13 @@ const scale = [
 function ScoringScale() {
   return (
     <div>
-      <p className="eyebrow mb-4">Cum se punctează</p>
+      <p className="eyebrow mb-4">How scoring works</p>
       <ul className="grid grid-cols-4 gap-px overflow-hidden rounded-xl glass-grid">
         {scale.map(({ rarity, points, share }) => (
           <li key={rarity} className="bg-surface px-4 py-4">
             <p className={`num text-3xl ${rarityStyles[rarity].text}`}>{points}</p>
             <p className="mt-2 text-xs font-medium text-fg">{rarityStyles[rarity].label}</p>
-            <p className="num mt-0.5 text-[11px] text-faint">{share} jucători</p>
+            <p className="num mt-0.5 text-[11px] text-faint">{share} of players</p>
           </li>
         ))}
       </ul>
@@ -167,10 +167,10 @@ export function AuthCallbackPage() {
     const access_token = params.get('access_token');
     const refresh_token = params.get('refresh_token');
     if (!access_token || !refresh_token) {
-      setError(params.get('error') ?? 'Login eșuat');
+      setError(params.get('error') ?? 'Sign-in failed');
       return;
     }
-    acceptTokens({ access_token, refresh_token }).then(() => navigate('/', { replace: true }), () => setError('Login eșuat'));
+    acceptTokens({ access_token, refresh_token }).then(() => navigate('/', { replace: true }), () => setError('Sign-in failed'));
   }, [acceptTokens, navigate, loading, user]);
 
   return (
@@ -180,10 +180,10 @@ export function AuthCallbackPage() {
         {error ? (
           <>
             <p className="mb-5 text-sm text-[#ffb4b4]">{error}</p>
-            <Button onClick={() => navigate(user ? `/users/${user.id}` : '/login')}>{user ? 'Înapoi la profil' : 'Înapoi la login'}</Button>
+            <Button onClick={() => navigate(user ? `/users/${user.id}` : '/login')}>{user ? 'Back to profile' : 'Back to sign in'}</Button>
           </>
         ) : (
-          <p className="text-sm text-muted">Te conectăm…</p>
+          <p className="text-sm text-muted">Signing you in…</p>
         )}
       </div>
     </div>

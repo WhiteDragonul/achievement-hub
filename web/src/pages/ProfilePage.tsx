@@ -23,18 +23,18 @@ const rarities: Rarity[] = ['ultra_rare', 'very_rare', 'rare', 'common'];
 // Temele de profil: aceleași valori ca CHECK-urile din migrația 009.
 const accentStyles: Record<AccentColor, { label: string; color: string }> = {
   violet: { label: 'Violet', color: '#a78bfa' },
-  blue: { label: 'Albastru', color: '#60a5fa' },
+  blue: { label: 'Blue', color: '#60a5fa' },
   cyan: { label: 'Cyan', color: '#22d3ee' },
-  emerald: { label: 'Smarald', color: '#34d399' },
-  amber: { label: 'Chihlimbar', color: '#fbbf24' },
-  rose: { label: 'Roz', color: '#fb7185' },
+  emerald: { label: 'Emerald', color: '#34d399' },
+  amber: { label: 'Amber', color: '#fbbf24' },
+  rose: { label: 'Rose', color: '#fb7185' },
 };
 const bannerStyles: Record<Banner, { label: string; background: string }> = {
   aurora: { label: 'Aurora', background: 'linear-gradient(120deg, #4f46e5 0%, #a21caf 50%, #0891b2 100%)' },
-  sunset: { label: 'Apus', background: 'linear-gradient(120deg, #f97316 0%, #db2777 55%, #7c3aed 100%)' },
+  sunset: { label: 'Sunset', background: 'linear-gradient(120deg, #f97316 0%, #db2777 55%, #7c3aed 100%)' },
   ocean: { label: 'Ocean', background: 'linear-gradient(120deg, #0ea5e9 0%, #2563eb 50%, #0f766e 100%)' },
-  forest: { label: 'Pădure', background: 'linear-gradient(120deg, #065f46 0%, #16a34a 50%, #a3e635 100%)' },
-  midnight: { label: 'Miez de noapte', background: 'linear-gradient(120deg, #0f172a 0%, #312e81 60%, #1e1b4b 100%)' },
+  forest: { label: 'Forest', background: 'linear-gradient(120deg, #065f46 0%, #16a34a 50%, #a3e635 100%)' },
+  midnight: { label: 'Midnight', background: 'linear-gradient(120deg, #0f172a 0%, #312e81 60%, #1e1b4b 100%)' },
 };
 
 export function ProfilePage() {
@@ -94,7 +94,7 @@ export function ProfilePage() {
               <p className="eyebrow mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span>@{user.username}</span>
                 <span className="text-line-strong">/</span>
-                <span>din {new Date(user.created_at).toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' })}</span>
+                <span>since {new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
                 {user.role !== 'user' && <span className="rounded border border-gold/30 px-1.5 py-px !text-gold">{user.role}</span>}
               </p>
               <h1 className="truncate font-display font-extrabold tracking-[-0.03em] text-[40px] leading-none sm:text-[52px]">{name}</h1>
@@ -102,16 +102,16 @@ export function ProfilePage() {
             <div className="flex flex-wrap gap-2 pb-1">
               {isOwnProfile && (
                 <Button variant={editing ? 'secondary' : 'primary'} onClick={() => setEditing(!editing)}>
-                  <Icon name={editing ? 'x' : 'edit'} className="h-4 w-4" /> {editing ? 'Închide' : 'Editează'}
+                  <Icon name={editing ? 'x' : 'edit'} className="h-4 w-4" /> {editing ? 'Close' : 'Edit'}
                 </Button>
               )}
               {(isOwnProfile || isAdmin) && (
                 <>
                   {/* Rapoartele userului (etapa 5): CSV generat cu COPY, Excel cu două foi */}
-                  <Button variant="secondary" title="Achievement-urile, CSV" onClick={() => exportFile(`/exports/users/${profileId}/achievements.csv`, `achievements-${user.username}.csv`)}>
+                  <Button variant="secondary" title="Achievements, CSV" onClick={() => exportFile(`/exports/users/${profileId}/achievements.csv`, `achievements-${user.username}.csv`)}>
                     <Icon name="download" className="h-4 w-4" /> CSV
                   </Button>
-                  <Button variant="secondary" title="Biblioteca, Excel" onClick={() => exportFile(`/exports/users/${profileId}/library.xlsx`, `biblioteca-${user.username}.xlsx`)}>
+                  <Button variant="secondary" title="Library, Excel" onClick={() => exportFile(`/exports/users/${profileId}/library.xlsx`, `library-${user.username}.xlsx`)}>
                     <Icon name="download" className="h-4 w-4" /> Excel
                   </Button>
                 </>
@@ -122,15 +122,15 @@ export function ProfilePage() {
 
           {/* Cifrele profilului, separate prin linii fine */}
           <dl className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-xl glass-grid sm:grid-cols-4">
-            <Stat value={totals.games} label="Jocuri" />
-            <Stat value={totalAchievements} label="Achievement-uri" />
-            <Stat value={Math.round(totals.playtime_minutes / 60)} label="Ore jucate" />
-            <Stat value={totals.perfect_games} label="Jocuri 100%" gold={totals.perfect_games > 0} />
+            <Stat value={totals.games} label="Games" />
+            <Stat value={totalAchievements} label="Achievements" />
+            <Stat value={Math.round(totals.playtime_minutes / 60)} label="Hours played" />
+            <Stat value={totals.perfect_games} label="100% games" gold={totals.perfect_games > 0} />
           </dl>
           {favorite_game && (
             <Link to={`/games/${favorite_game.id}`} className="mt-4 inline-flex items-center gap-2.5 text-sm text-muted transition-colors hover:text-fg">
               {favorite_game.icon_url && <img src={favorite_game.icon_url} alt="" className="h-5 w-5 rounded" />}
-              <span className="eyebrow">Preferat</span> <span className="font-medium text-fg">{favorite_game.title}</span>
+              <span className="eyebrow">Favorite</span> <span className="font-medium text-fg">{favorite_game.title}</span>
             </Link>
           )}
         </div>
@@ -138,7 +138,7 @@ export function ProfilePage() {
 
       <ErrorMessage error={exportError} />
       {user.hidden_from_leaderboards && (
-        <p className="mb-6 rounded-lg border border-gold/25 bg-gold/[0.06] px-3.5 py-2.5 text-sm text-gold">Ascuns din clasamente de un moderator.</p>
+        <p className="mb-6 rounded-lg border border-gold/25 bg-gold/[0.06] px-3.5 py-2.5 text-sm text-gold">Hidden from leaderboards by a moderator.</p>
       )}
 
       {editing && <EditProfile profile={profile.data} onSaved={() => { refresh(); setEditing(false); }} />}
@@ -146,7 +146,7 @@ export function ProfilePage() {
       {/* ---- Vitrina ---- */}
       {showcase.length > 0 && (
         <section className="mb-10">
-          <SectionTitle>Vitrină</SectionTitle>
+          <SectionTitle>Showcase</SectionTitle>
           <div className="grid gap-3 sm:grid-cols-3">
             {showcase.map((achievement, index) => <ShowcaseCard key={achievement.id} achievement={achievement} accent={accent} index={index} />)}
           </div>
@@ -155,13 +155,13 @@ export function ProfilePage() {
 
       {/* ---- Raritate: câte achievement-uri pe fiecare nivel ---- */}
       <section className="mb-10">
-        <SectionTitle aside={`${totalAchievements.toLocaleString('ro-RO')} total`}>Raritate</SectionTitle>
+        <SectionTitle aside={`${totalAchievements.toLocaleString('en-US')} total`}>Rarity</SectionTitle>
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl glass-grid sm:grid-cols-4">
           {rarities.map((rarity) => {
             const count = Number(rarity_counts[rarity] ?? 0);
             return (
               <div key={rarity} className="bg-surface p-5">
-                <p className={`num text-3xl ${count > 0 ? rarityStyles[rarity].text : 'text-faint'}`}>{count.toLocaleString('ro-RO')}</p>
+                <p className={`num text-3xl ${count > 0 ? rarityStyles[rarity].text : 'text-faint'}`}>{count.toLocaleString('en-US')}</p>
                 <div className="mt-3"><RarityBadge rarity={rarity} /></div>
                 <div className="mt-3 h-0.5 overflow-hidden rounded-full bg-white/[0.06]">
                   <div className={`h-full ${rarityStyles[rarity].dot}`} style={{ width: `${totalAchievements ? (count / totalAchievements) * 100 : 0}%` }} />
@@ -174,12 +174,12 @@ export function ProfilePage() {
 
       {/* ---- Conturi ---- */}
       <section className="mb-10">
-        <SectionTitle aside={accounts.length}>Conturi legate</SectionTitle>
+        <SectionTitle aside={accounts.length}>Linked accounts</SectionTitle>
         <div className="space-y-3">
           {accounts.map((account) => (
             <AccountRow key={account.id} account={account} editable={isOwnProfile} onChange={refresh} />
           ))}
-          {accounts.length === 0 && !isOwnProfile && <p className="text-sm text-faint">Niciun cont legat.</p>}
+          {accounts.length === 0 && !isOwnProfile && <p className="text-sm text-faint">No linked accounts.</p>}
           {isOwnProfile && <ConnectPlatforms userId={userId} linked={accounts} onLinked={refresh} />}
         </div>
       </section>
@@ -188,7 +188,7 @@ export function ProfilePage() {
 
       {recent.data && recent.data.length > 0 && (
         <section className="mb-10">
-          <SectionTitle>Deblocate recent</SectionTitle>
+          <SectionTitle>Recently unlocked</SectionTitle>
           <ul className="panel overflow-hidden rounded-3xl">
             {recent.data.map((achievement) => <RecentRow key={achievement.id} achievement={achievement} />)}
           </ul>
@@ -197,12 +197,12 @@ export function ProfilePage() {
 
       {/* ---- Biblioteca ---- */}
       <section>
-        <SectionTitle aside={totals.games}>Biblioteca de jocuri</SectionTitle>
+        <SectionTitle aside={totals.games}>Game library</SectionTitle>
         <ErrorMessage error={library.error} />
         {library.data?.pages[0]?.length === 0 && (
           <div className="panel rounded-3xl">
-            <Empty icon="games" title="Nicio bibliotecă încă">
-              {isOwnProfile ? 'Conectează contul Steam și jocurile tale apar aici după prima sincronizare.' : 'Jucătorul nu are încă jocuri sincronizate.'}
+            <Empty icon="games" title="No library yet">
+              {isOwnProfile ? 'Connect your Steam account and your games show up here after the first sync.' : 'This player has no synced games yet.'}
             </Empty>
           </div>
         )}
@@ -219,13 +219,13 @@ export function ProfilePage() {
                         : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-raised text-faint"><Icon name="games" /></span>}
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">{game.title}</p>
-                        <p className="num text-[11px] text-faint">{Math.round(game.playtime_minutes / 60).toLocaleString('ro-RO')} ore</p>
+                        <p className="num text-[11px] text-faint">{Math.round(game.playtime_minutes / 60).toLocaleString('en-US')} h</p>
                       </div>
                       {perfect ? <span className="eyebrow !text-gold">100%</span> : <PlatformBadge code={game.platform_code} />}
                     </div>
                     {game.total_achievements > 0
                       ? <ProgressBar value={game.unlocked_achievements} total={game.total_achievements} />
-                      : <p className="text-xs text-faint">Fără achievement-uri</p>}
+                      : <p className="text-xs text-faint">No achievements</p>}
                   </Link>
                 </li>
               );
@@ -234,7 +234,7 @@ export function ProfilePage() {
         )}
         {library.hasNextPage && (
           <Button variant="secondary" className="mt-4 w-full" disabled={library.isFetchingNextPage} onClick={() => library.fetchNextPage()}>
-            {library.isFetchingNextPage ? 'Se încarcă…' : 'Mai multe jocuri'}
+            {library.isFetchingNextPage ? 'Loading…' : 'More games'}
           </Button>
         )}
       </section>
@@ -246,7 +246,7 @@ function Stat({ value, label, gold = false }: { value: number; label: string; go
   return (
     <div className="bg-surface px-4 py-4">
       <dt className="eyebrow">{label}</dt>
-      <dd className={`num mt-1.5 text-2xl ${gold ? 'text-gold' : ''}`}>{Number(value).toLocaleString('ro-RO')}</dd>
+      <dd className={`num mt-1.5 text-2xl ${gold ? 'text-gold' : ''}`}>{Number(value).toLocaleString('en-US')}</dd>
     </div>
   );
 }
@@ -295,7 +295,7 @@ function RecentRow({ achievement }: { achievement: UnlockedAchievement }) {
       <div className="hidden text-right sm:block">
         <RarityBadge rarity={achievement.rarity} />
         {achievement.global_unlock_pct !== null && (
-          <p className="num text-[11px] text-faint">{Number(achievement.global_unlock_pct).toFixed(1)}% dintre jucători</p>
+          <p className="num text-[11px] text-faint">{Number(achievement.global_unlock_pct).toFixed(1)}% of players</p>
         )}
       </div>
     </li>
@@ -357,25 +357,25 @@ function EditProfile({ profile, onSaved }: { profile: Profile; onSaved: () => vo
     <Card className="rise mb-10 !p-0">
       <form onSubmit={submit}>
         <div className="border-b border-line px-5 py-4 sm:px-7">
-          <p className="font-medium">Editează profilul</p>
-          <p className="text-sm text-muted">Ce văd ceilalți când îți deschid profilul.</p>
+          <p className="font-medium">Edit profile</p>
+          <p className="text-sm text-muted">What others see when they open your profile.</p>
         </div>
 
         <div className="space-y-7 px-5 py-6 sm:px-7">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Nume afișat">
+            <Field label="Display name">
               <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={64} placeholder={user.username} />
             </Field>
-            <Field label="Avatar" hint="link https către o imagine">
+            <Field label="Avatar" hint="https link to an image">
               <Input type="url" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://" />
             </Field>
           </div>
 
-          <Field label="Despre tine" hint={`${bio.length}/300`}>
+          <Field label="About you" hint={`${bio.length}/300`}>
             <textarea
               value={bio} onChange={(e) => setBio(e.target.value)} maxLength={300} rows={3}
               className={`${fieldClass} resize-y py-3 leading-relaxed`}
-              placeholder="Ce jocuri îți plac, ce vânezi acum"
+              placeholder="Games you love, what you are hunting right now"
             />
           </Field>
 
@@ -410,19 +410,19 @@ function EditProfile({ profile, onSaved }: { profile: Profile; onSaved: () => vo
             </fieldset>
           </div>
 
-          <Field label="Joc preferat">
+          <Field label="Favorite game">
             <Select value={favoriteGameId ?? ''} onChange={(e) => setFavoriteGameId(e.target.value ? Number(e.target.value) : null)}>
-              <option value="">(niciunul)</option>
+              <option value="">(none)</option>
               {games.data?.map((game) => <option key={game.game_id} value={game.game_id}>{game.title}</option>)}
             </Select>
           </Field>
 
           <fieldset>
             <legend className="mb-2.5 flex w-full justify-between text-[13px] font-medium text-muted">
-              <span>Vitrină: până la 3 achievement-uri, cele mai rare primele</span>
+              <span>Showcase: up to 3 achievements, rarest first</span>
               <span className="num text-xs font-normal text-faint">{showcaseIds.length}/3</span>
             </legend>
-            {choices.length === 0 && <p className="text-sm text-faint">Niciun achievement deblocat încă. Sincronizează contul Steam.</p>}
+            {choices.length === 0 && <p className="text-sm text-faint">No unlocked achievements yet. Sync your Steam account.</p>}
             <div className="grid max-h-80 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
               {choices.map((achievement) => {
                 const selected = showcaseIds.includes(achievement.id);
@@ -451,7 +451,7 @@ function EditProfile({ profile, onSaved }: { profile: Profile; onSaved: () => vo
         </div>
 
         <div className="flex justify-end gap-2 border-t border-line px-5 py-4 sm:px-7">
-          <Button type="submit" disabled={save.isPending}>{save.isPending ? 'Se salvează…' : 'Salvează profilul'}</Button>
+          <Button type="submit" disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save profile'}</Button>
         </div>
       </form>
     </Card>
@@ -497,8 +497,8 @@ function AccountRow({ account, editable, onChange }: { account: ProfileAccount; 
   });
 
   const statusLabel = syncInProgress
-    ? latest?.status === 'queued' ? 'În coadă' : 'Se sincronizează'
-    : account.last_synced_at ? `Sincronizat ${new Date(account.last_synced_at).toLocaleString('ro-RO', { dateStyle: 'medium', timeStyle: 'short' })}` : 'Nesincronizat';
+    ? latest?.status === 'queued' ? 'Queued' : 'Syncing'
+    : account.last_synced_at ? `Synced ${new Date(account.last_synced_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}` : 'Not synced';
 
   return (
     <Card className="!p-0">
@@ -513,45 +513,45 @@ function AccountRow({ account, editable, onChange }: { account: ProfileAccount; 
           </p>
         </div>
         <div className="flex gap-6 text-right">
-          <span><span className="num block text-sm">{Number(account.games).toLocaleString('ro-RO')}</span><span className="eyebrow !text-[10px]">jocuri</span></span>
-          <span><span className="num block text-sm">{Number(account.achievements).toLocaleString('ro-RO')}</span><span className="eyebrow !text-[10px]">achiev.</span></span>
+          <span><span className="num block text-sm">{Number(account.games).toLocaleString('en-US')}</span><span className="eyebrow !text-[10px]">games</span></span>
+          <span><span className="num block text-sm">{Number(account.achievements).toLocaleString('en-US')}</span><span className="eyebrow !text-[10px]">achiev.</span></span>
         </div>
         <div className="flex w-full gap-1.5 sm:w-auto">
           <Button variant="ghost" size="sm" aria-expanded={showHistory} onClick={() => setShowHistory(!showHistory)}>
-            <Icon name="history" className="h-4 w-4" /> Istoric
+            <Icon name="history" className="h-4 w-4" /> History
           </Button>
           {editable && (
             <Button variant="secondary" size="sm" onClick={() => sync.mutate()} disabled={sync.isPending || syncInProgress}>
-              <Icon name="sync" className={`h-4 w-4 ${syncInProgress ? 'animate-spin' : ''}`} /> {syncInProgress ? 'Rulează' : 'Sincronizează'}
+              <Icon name="sync" className={`h-4 w-4 ${syncInProgress ? 'animate-spin' : ''}`} /> {syncInProgress ? 'Running' : 'Sync'}
             </Button>
           )}
           {editable && (
             <Button
               variant="ghost" size="sm" className="hover:!text-danger"
-              onClick={() => confirm(`Dezlegi contul ${account.platform_name}? Progresul lui se șterge.`) && unlink.mutate()}
+              onClick={() => confirm(`Unlink your ${account.platform_name} account? Its progress will be deleted.`) && unlink.mutate()}
             >
-              Dezleagă
+              Unlink
             </Button>
           )}
         </div>
       </div>
       {latest?.status === 'failed' && !showHistory && (
-        <p className="border-t border-line px-5 py-3 text-sm text-[#ffb4b4]">Ultima sincronizare a eșuat: {latest.error_message}</p>
+        <p className="border-t border-line px-5 py-3 text-sm text-[#ffb4b4]">The last sync failed: {latest.error_message}</p>
       )}
       {(sync.error || unlink.error) && <div className="px-5"><ErrorMessage error={sync.error ?? unlink.error} /></div>}
       {showHistory && (
         <ol className="rise border-t border-line px-5 py-3">
           {history.data?.map((run) => (
             <li key={run.id} className="flex flex-wrap items-baseline gap-x-3 py-1.5 text-xs">
-              <span className="num w-36 text-faint">{new Date(run.created_at).toLocaleString('ro-RO', { dateStyle: 'short', timeStyle: 'short' })}</span>
+              <span className="num w-36 text-faint">{new Date(run.created_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}</span>
               <span className={`num ${run.status === 'failed' ? 'text-danger' : run.status === 'succeeded' ? 'text-success' : 'text-gold'}`}>{run.status}</span>
               <span className="text-muted">
-                {run.status === 'succeeded' && `${run.games_synced} jocuri, ${run.achievements_synced} achievement-uri noi`}
+                {run.status === 'succeeded' && `${run.games_synced} games, ${run.achievements_synced} new achievements`}
                 {run.error_message}
               </span>
             </li>
           ))}
-          {history.data?.length === 0 && <li className="py-1.5 text-xs text-faint">Nicio sincronizare.</li>}
+          {history.data?.length === 0 && <li className="py-1.5 text-xs text-faint">No syncs yet.</li>}
         </ol>
       )}
     </Card>
@@ -573,19 +573,19 @@ function ConnectPlatforms({ userId, linked, onLinked }: { userId: number; linked
   return (
     <Card className="!p-0 !border-dashed !border-line-strong !bg-transparent">
       <div className="px-5 pt-5">
-        <p className="font-medium">Conectează o platformă</p>
-        <p className="mt-0.5 text-sm text-muted">Jocurile și achievement-urile se importă automat după conectare.</p>
+        <p className="font-medium">Connect a platform</p>
+        <p className="mt-0.5 text-sm text-muted">Games and achievements are imported automatically once connected.</p>
       </div>
       <ul className="mt-4">
         {available.map((platform) => platform.code === 'steam' ? (
           <li key={platform.id} className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-line px-5 py-4">
             <PlatformBadge code="steam" full />
             <p className="min-w-0 flex-1 basis-64 text-[13px] leading-relaxed text-muted">
-              Te autentifici pe steamcommunity.com; noi primim doar SteamID-ul, nu parola.
-              Setează în Steam „Detalii joc” pe <span className="text-fg">Public</span>, altfel Steam nu arată jocurile.
+              You sign in on steamcommunity.com; we only receive your SteamID, never your password.
+              Set "Game details" to <span className="text-fg">Public</span> in your Steam privacy settings, otherwise Steam hides your games.
             </p>
             <Button size="sm" onClick={() => connectSteam.mutate()} disabled={connectSteam.isPending}>
-              <Icon name="link" className="h-4 w-4" /> Conectează Steam
+              <Icon name="link" className="h-4 w-4" /> Connect Steam
             </Button>
           </li>
         ) : platform.linkable ? (
@@ -596,7 +596,7 @@ function ConnectPlatforms({ userId, linked, onLinked }: { userId: number; linked
           <li key={platform.id} className="flex items-center gap-4 border-t border-line px-5 py-4">
             <PlatformBadge code={platform.code} full />
             <p className="flex-1 text-sm text-faint">{platform.name}</p>
-            <span className="eyebrow">În curând</span>
+            <span className="eyebrow">Coming soon</span>
           </li>
         ))}
       </ul>
@@ -619,8 +619,8 @@ function MockLinkForm({ platform, userId, onLinked }: { platform: Platform; user
   return (
     <form onSubmit={submit} className="flex flex-wrap items-center gap-3">
       <PlatformBadge code={platform.code} full />
-      <Input name="display_name" aria-label={`Nume pe ${platform.name}`} placeholder={`Nume pe ${platform.name} (date demo)`} required className="min-w-40 flex-1" />
-      <Button type="submit" size="sm" variant="secondary" disabled={link.isPending}>Leagă (demo)</Button>
+      <Input name="display_name" aria-label={`Name on ${platform.name}`} placeholder={`Name on ${platform.name} (demo data)`} required className="min-w-40 flex-1" />
+      <Button type="submit" size="sm" variant="secondary" disabled={link.isPending}>Link (demo)</Button>
       <ErrorMessage error={link.error} />
     </form>
   );
@@ -644,20 +644,20 @@ function SocialActions({ currentUserId, profileId }: { currentUserId: number; pr
       <Card className="flex flex-col justify-center">
         <Button onClick={() => befriend.mutate()} disabled={befriend.isPending || befriend.isSuccess}>
           <Icon name={befriend.isSuccess ? 'check' : 'plus'} className="h-4 w-4" />
-          {befriend.isSuccess ? 'Cerere trimisă' : 'Cerere de prietenie'}
+          {befriend.isSuccess ? 'Request sent' : 'Add friend'}
         </Button>
         <div className="mt-3 empty:hidden"><ErrorMessage error={befriend.error} /></div>
       </Card>
       <Card>
         <form className="flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault(); report.mutate(); }}>
-          <Field label="Raportează profilul" hint="min. 5 caractere" className="min-w-52 flex-1">
-            <Input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Motivul, pentru moderatori" />
+          <Field label="Report this profile" hint="min. 5 characters" className="min-w-52 flex-1">
+            <Input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Reason, for the moderators" />
           </Field>
           <Button variant="danger" type="submit" disabled={report.isPending} className="!min-h-11">
-            <Icon name="flag" className="h-4 w-4" /> Raportează
+            <Icon name="flag" className="h-4 w-4" /> Report
           </Button>
         </form>
-        {report.isSuccess && <p role="status" className="mt-3 text-sm text-success">Raportarea a fost trimisă moderatorilor.</p>}
+        {report.isSuccess && <p role="status" className="mt-3 text-sm text-success">Your report was sent to the moderators.</p>}
         <div className="mt-3 empty:hidden"><ErrorMessage error={report.error} /></div>
       </Card>
     </section>

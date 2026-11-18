@@ -16,4 +16,4 @@ export const paginationProperties = {
 } as const;
 export type Pagination = { limit: number; offset: number };
 
-export const notFound = (what: string) => ({ error: `${what} nu există` });
+export const notFound = (what: string) => ({ error: `${what} does not exist` });

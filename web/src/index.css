@@ -60,7 +60,8 @@
 body {
   @apply min-h-dvh font-sans text-fg antialiased;
   font-weight: 500;
-  background: #1a0b2e; /* culoarea de bază, sub scenă (vizibilă doar o clipă, la încărcare) */
+  /* Fără background aici: culoarea de bază stă pe <html> (index.html), altfel fundalul lui body s-ar picta
+     peste scena fixă cu z-index -1. */
   -webkit-tap-highlight-color: transparent;
 }
 

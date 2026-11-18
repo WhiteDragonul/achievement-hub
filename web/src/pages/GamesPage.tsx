@@ -47,14 +47,14 @@ export function GamesPage() {
     <>
       <PageTitle
         eyebrow="Catalog"
-        subtitle="Toate jocurile cunoscute de pe platformele legate. Deschide unul ca să vezi achievement-urile și raritatea lor."
+        subtitle="Every known game across the linked platforms. Open one to see its achievements and how rare they are."
         actions={isAdmin && (
           <Button variant="secondary" onClick={() => setShowForm(!showForm)}>
-            <Icon name={showForm ? 'x' : 'plus'} className="h-4 w-4" /> {showForm ? 'Renunță' : 'Joc nou'}
+            <Icon name={showForm ? 'x' : 'plus'} className="h-4 w-4" /> {showForm ? 'Cancel' : 'New game'}
           </Button>
         )}
       >
-        Jocuri
+        Games
       </PageTitle>
 
       <div className="mb-6 flex flex-wrap gap-3">
@@ -62,31 +62,31 @@ export function GamesPage() {
           <Icon name="search" className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-faint" />
           <Input
             type="search"
-            aria-label="Caută după titlu"
-            placeholder="Caută după titlu"
+            aria-label="Search by title"
+            placeholder="Search by title"
             value={search}
             onChange={(event) => { setSearch(event.target.value); setPage(0); }}
             className="!pl-10"
           />
         </div>
         <Select value={platformId} onChange={(event) => { setPlatformId(event.target.value); setPage(0); }} className="w-52">
-          <option value="">Toate platformele</option>
+          <option value="">All platforms</option>
           {platforms.data?.map((platform) => <option key={platform.id} value={platform.id}>{platform.name}</option>)}
         </Select>
       </div>
 
       {showForm && (
         <Card className="rise mb-6">
-          <SectionTitle>Adaugă în catalog</SectionTitle>
+          <SectionTitle>Add to catalog</SectionTitle>
           <form onSubmit={submit} className="grid items-end gap-3 sm:grid-cols-[1fr_1fr_2fr_auto]">
-            <Field label="Platformă">
+            <Field label="Platform">
               <Select name="platform_id" required>
                 {platforms.data?.map((platform) => <option key={platform.id} value={platform.id}>{platform.name}</option>)}
               </Select>
             </Field>
-            <Field label="Id extern"><Input name="external_id" placeholder="ex. appid" required /></Field>
-            <Field label="Titlu"><Input name="title" required /></Field>
-            <Button type="submit" disabled={createGame.isPending} className="!min-h-11">Salvează</Button>
+            <Field label="External id"><Input name="external_id" placeholder="e.g. appid" required /></Field>
+            <Field label="Title"><Input name="title" required /></Field>
+            <Button type="submit" disabled={createGame.isPending} className="!min-h-11">Save</Button>
           </form>
           <div className="mt-4"><ErrorMessage error={createGame.error} /></div>
         </Card>
@@ -112,7 +112,7 @@ export function GamesPage() {
         </ul>
       )}
       {games.data?.length === 0 && (
-        <div className="panel rounded-3xl"><Empty icon="search" title="Niciun joc găsit">Încearcă alt titlu sau altă platformă.</Empty></div>
+        <div className="panel rounded-3xl"><Empty icon="search" title="No games found">Try another title or platform.</Empty></div>
       )}
 
       <Pager page={page} hasNext={(games.data?.length ?? 0) === PAGE_SIZE} onChange={setPage} />

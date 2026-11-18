@@ -80,14 +80,14 @@ export async function api<T>(path: string, options: { method?: string; body?: un
 
   const data = await response.json();
   // Erorile API-ului au forma { error, constraint? } (vezi api/src/errors.ts).
-  if (!response.ok) throw new ApiError(response.status, data.error ?? 'Eroare', data.constraint);
+  if (!response.ok) throw new ApiError(response.status, data.error ?? 'Error', data.constraint);
   return data as T;
 }
 
 // Descarcă un raport (CSV / Excel / PDF): cererea trebuie să aibă tokenul, deci nu poate fi un simplu <a href>.
 export async function download(path: string, filename: string) {
   const response = await authorizedFetch(path);
-  if (!response.ok) throw new ApiError(response.status, (await response.json()).error ?? 'Eroare');
+  if (!response.ok) throw new ApiError(response.status, (await response.json()).error ?? 'Error');
   const url = URL.createObjectURL(await response.blob());
   const link = Object.assign(document.createElement('a'), { href: url, download: filename });
   link.click();

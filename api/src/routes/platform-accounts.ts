@@ -43,7 +43,7 @@ export async function platformAccountsRoutes(app: FastifyInstance) {
     const account = await db.selectFrom('platform_accounts').select(publicColumns)
       .where('id', '=', request.params.id)
       .executeTakeFirst();
-    return account ?? reply.code(404).send(notFound('Contul de platformă'));
+    return account ?? reply.code(404).send(notFound('Platform account'));
   });
 
   // UNIQUE (user_id, platform_id) și UNIQUE (platform_id, external_id) → 409 dacă se încalcă.
@@ -68,11 +68,11 @@ export async function platformAccountsRoutes(app: FastifyInstance) {
     // Platformă reală (Steam): contul se leagă doar prin login Steam (/auth/steam/link), care dovedește că e al userului.
     // Altfel oricine ar putea „revendica” SteamID-ul altcuiva. Adminul poate lega manual (ex. corecturi).
     if (platform && !platform.is_mock && !hasRole(request.user, 'admin')) {
-      forbid(`Contul ${platform.name} se leagă prin butonul „Conectează ${platform.name}”`);
+      forbid(`Link your ${platform.name} account with the "Connect ${platform.name}" button`);
     }
     // Platformele fără provider real (date generate) sunt dezactivate, ca profilul să conțină doar date reale (D45).
     if (platform?.is_mock && !config.allowMockPlatforms) {
-      return reply.code(400).send({ error: `${platform.name} nu are încă o integrare reală` });
+      return reply.code(400).send({ error: `${platform.name} has no real integration yet` });
     }
     const { access_token, ...fields } = request.body;
     const account = await db.insertInto('platform_accounts')
@@ -100,14 +100,14 @@ export async function platformAccountsRoutes(app: FastifyInstance) {
       .where('id', '=', request.params.id)
       .returning(publicColumns)
       .executeTakeFirst();
-    return account ?? reply.code(404).send(notFound('Contul de platformă'));
+    return account ?? reply.code(404).send(notFound('Platform account'));
   });
 
   // Dezlegarea unui cont: progresul lui (user_games, user_achievements, sync_runs) dispare prin ON DELETE CASCADE.
   app.delete<{ Params: IdParams }>('/platform-accounts/:id', { schema: { params: idParams } }, async (request, reply) => {
     await assertOwnsAccount(request, request.params.id);
     const result = await db.deleteFrom('platform_accounts').where('id', '=', request.params.id).executeTakeFirst();
-    if (result.numDeletedRows === 0n) return reply.code(404).send(notFound('Contul de platformă'));
+    if (result.numDeletedRows === 0n) return reply.code(404).send(notFound('Platform account'));
     return reply.code(204).send();
   });
 }

@@ -13,7 +13,7 @@ const refreshBody = {
 } as const;
 
 // Același răspuns pentru „email inexistent” și „parolă greșită”: nu dezvăluim ce emailuri au cont.
-const INVALID_LOGIN = { error: 'Email sau parolă greșită' };
+const INVALID_LOGIN = { error: 'Wrong email or password' };
 
 export async function authRoutes(app: FastifyInstance) {
   // Contul nou are mereu rolul 'user'; rolurile superioare le dă doar un admin (PATCH /users/:id).
@@ -58,7 +58,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (!row?.password_hash || !(await argon2.verify(row.password_hash, password))) {
       return reply.code(401).send(INVALID_LOGIN);
     }
-    if (row.is_banned) return reply.code(403).send({ error: 'Contul este suspendat' });
+    if (row.is_banned) return reply.code(403).send({ error: 'This account is suspended' });
 
     const user: AuthUser = { id: row.id, role: row.role, username: row.username };
     return { user, ...(await createSession(user, request.headers['user-agent'])) };
@@ -76,16 +76,16 @@ export async function authRoutes(app: FastifyInstance) {
       .where('refresh_tokens.token_hash', '=', hashToken(request.body.refresh_token))
       .executeTakeFirst();
 
-    if (!session) return reply.code(401).send({ error: 'Sesiune invalidă' });
+    if (!session) return reply.code(401).send({ error: 'Invalid session' });
     if (session.revoked_at) {
       await db.updateTable('refresh_tokens').set({ revoked_at: new Date() })
         .where('user_id', '=', session.user_id)
         .where('revoked_at', 'is', null)
         .execute();
-      return reply.code(401).send({ error: 'Sesiune revocată' });
+      return reply.code(401).send({ error: 'Session revoked' });
     }
-    if (new Date(session.expires_at) < new Date()) return reply.code(401).send({ error: 'Sesiune expirată' });
-    if (session.is_banned) return reply.code(403).send({ error: 'Contul este suspendat' });
+    if (new Date(session.expires_at) < new Date()) return reply.code(401).send({ error: 'Session expired' });
+    if (session.is_banned) return reply.code(403).send({ error: 'This account is suspended' });
 
     await db.updateTable('refresh_tokens').set({ revoked_at: new Date() }).where('id', '=', session.id).execute();
     // Rolul se citește din DB la fiecare refresh: o schimbare de rol se vede în cel mult 15 minute.

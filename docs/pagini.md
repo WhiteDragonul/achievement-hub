@@ -6,7 +6,7 @@ iar după orice modificare lista afectată se reîncarcă automat.
 
 > Toate paginile cer autentificare (altfel → `/login`). Coloana **Roluri** arată ce poate face fiecare rol;
 > API-ul verifică aceleași reguli la fiecare cerere (vezi [api.md](api.md#roluri)).
-> Interfața e în stil „Sunset Glass” (D49): carduri și bare de sticlă translucide (liquid glass) peste o scenă de apus pe o coastă tropicală (cer, soare, ocean, palmieri), font Roboto bold. Fiecare pagină are un titlu mare, o etichetă de secțiune și o singură acțiune principală (butonul în degrade roz-portocaliu).
+> Interfața e în engleză (D52), în stil „Sunset Glass” (D49): carduri și bare de sticlă translucide (liquid glass) peste o scenă de apus pe o coastă tropicală (cer, soare, ocean, palmieri), font Roboto bold. Fiecare pagină are un titlu mare, o etichetă de secțiune și o singură acțiune principală (butonul în degrade roz-portocaliu).
 
 | Pagină | Adresă | Roluri | Entități (tabele) | Operații |
 |---|---|---|---|---|

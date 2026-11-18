@@ -129,17 +129,17 @@ export async function usersRoutes(app: FastifyInstance) {
     const isSelf = me.id === request.params.id;
     const moderationKeys = ['is_banned', 'hidden_from_leaderboards'];
     const keys = Object.keys(request.body);
-    if (request.body.role !== undefined && !hasRole(me, 'admin')) forbid('Doar adminul schimbă rolurile');
+    if (request.body.role !== undefined && !hasRole(me, 'admin')) forbid('Only an admin can change roles');
     if (keys.some((key) => moderationKeys.includes(key)) && !hasRole(me, 'moderator')) {
-      forbid('Doar moderatorii pot suspenda / ascunde utilizatori');
+      forbid('Only moderators can ban or hide users');
     }
     if (keys.some((key) => !moderationKeys.includes(key)) && !isSelf && !hasRole(me, 'admin')) {
-      forbid('Poți modifica doar propriul profil');
+      forbid('You can only edit your own profile');
     }
 
     const { favorite_game_id } = request.body;
     if (favorite_game_id && !(await ownsGame(request.params.id, favorite_game_id))) {
-      return reply.code(400).send({ error: 'Jocul preferat trebuie să fie în biblioteca ta' });
+      return reply.code(400).send({ error: 'Your favorite game must be in your library' });
     }
 
     const { password, ...fields } = request.body;
@@ -185,7 +185,7 @@ export async function usersRoutes(app: FastifyInstance) {
         .where('pa.user_id', '=', request.params.id)
         .where('ua.achievement_id', 'in', ids)
         .execute();
-      if (unlocked.length !== ids.length) return reply.code(400).send({ error: 'Poți expune doar achievement-uri deblocate' });
+      if (unlocked.length !== ids.length) return reply.code(400).send({ error: 'You can only showcase unlocked achievements' });
     }
     // Ștergere + inserare în aceeași tranzacție: vitrina nu rămâne niciodată pe jumătate scrisă.
     await db.transaction().execute(async (trx) => {

@@ -306,3 +306,9 @@ browserul sistemului (plugin-ul opener: Steam nu permite login în ferestre înc
 sunt în `web/src/native.ts`, iar pachetele Tauri se încarcă dinamic, deci site-ul nu le descarcă. Windows se construiește
 pe GitHub Actions (nu se poate de pe Mac); iOS pe telefon cere semnare Apple (vezi `docs/build.md`).
 Logo-ul (trofeu cu coroana în spate, pe apus) e desenat ca SVG în `app/icon/logo.svg`; iconițele sunt generate cu `tauri icon`.
+
+**D52: Interfața și mesajele API-ului sunt în engleză; codul, comentariile și documentația rămân în română.**
+Aplicația se prezintă la o convenție, cu public internațional. Tot ce vede utilizatorul e în engleză: textele din `web/`,
+formatarea datelor și numerelor (`en-US`), mesajele de eroare ale API-ului (inclusiv traducerea erorilor Postgres din
+`errors.ts`), antetele CSV, foile Excel și raportul PDF. Comentariile, documentația din `/docs` și jurnalele rămân în
+română, pentru susținerea proiectului. Excepție: erorile pentru programator (ex. `useAuth` folosit în afara provider-ului).

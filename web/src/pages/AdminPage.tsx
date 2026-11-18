@@ -13,23 +13,23 @@ export function AdminPage() {
   const { isModerator, isAdmin } = useCurrentUser();
   const [tab, setTab] = useState<Tab>('reports');
   const [error, setError] = useState<unknown>(null);
-  if (!isModerator) return <ErrorMessage error={new Error('Pagina e disponibilă doar moderatorilor și adminilor.')} />;
+  if (!isModerator) return <ErrorMessage error={new Error('This page is only available to moderators and admins.')} />;
 
-  const tabs: { id: Tab; label: string }[] = [{ id: 'reports', label: 'Raportări' }, { id: 'users', label: 'Utilizatori' }];
-  if (isAdmin) tabs.push({ id: 'platforms', label: 'Platforme' });
+  const tabs: { id: Tab; label: string }[] = [{ id: 'reports', label: 'Reports' }, { id: 'users', label: 'Users' }];
+  if (isAdmin) tabs.push({ id: 'platforms', label: 'Platforms' });
 
   return (
     <>
       <PageTitle
         eyebrow={isAdmin ? 'Administrator' : 'Moderator'}
-        subtitle={isAdmin ? 'Raportări, conturi și platforme. Fiecare acțiune e verificată și de API (403).' : 'Raportări și conturi. Fiecare acțiune e verificată și de API (403).'}
+        subtitle={isAdmin ? 'Reports, accounts and platforms. Every action is also checked by the API (403).' : 'Reports and accounts. Every action is also checked by the API (403).'}
         actions={
-          <Button variant="secondary" onClick={() => download('/exports/overview.pdf', 'raport-achievement-hub.pdf').catch(setError)}>
-            <Icon name="download" className="h-4 w-4" /> Raport PDF
+          <Button variant="secondary" onClick={() => download('/exports/overview.pdf', 'achievement-hub-report.pdf').catch(setError)}>
+            <Icon name="download" className="h-4 w-4" /> PDF report
           </Button>
         }
       >
-        Administrare
+        Administration
       </PageTitle>
       <ErrorMessage error={error} />
       <Segmented options={tabs} value={tab} onChange={setTab} className="mb-8 max-w-md" />
@@ -60,10 +60,10 @@ function ReportsSection() {
 
   return (
     <>
-      <Select value={status} onChange={(event) => setStatus(event.target.value)} className="mb-5 w-48" aria-label="Starea raportărilor">
-        <option value="open">Deschise</option>
-        <option value="resolved">Rezolvate</option>
-        <option value="rejected">Respinse</option>
+      <Select value={status} onChange={(event) => setStatus(event.target.value)} className="mb-5 w-48" aria-label="Report status">
+        <option value="open">Open</option>
+        <option value="resolved">Resolved</option>
+        <option value="rejected">Rejected</option>
       </Select>
       <ErrorMessage error={reports.error ?? mutate.error} />
       {reports.isPending ? <Loading /> : (
@@ -73,40 +73,40 @@ function ReportsSection() {
               <div className="px-5 pt-5">
                 <p className="eyebrow mb-3 flex flex-wrap gap-x-3">
                   <span>#{report.id}</span>
-                  <span>{new Date(report.created_at).toLocaleString('ro-RO', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                  <span>{new Date(report.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
                 </p>
                 <p className="text-sm text-muted">
                   <Link to={`/users/${report.reporter_id}`} className="font-medium text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">@{report.reporter_username}</Link>
-                  {' a raportat pe '}
+                  {' reported '}
                   <Link to={`/users/${report.target_user_id}`} className="font-medium text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">@{report.target_username}</Link>
                 </p>
                 <blockquote className="mt-3 border-l-2 border-gold/50 pl-4 font-display font-extrabold tracking-[-0.03em] text-xl leading-snug text-fg">„{report.reason}”</blockquote>
-                {report.resolution_note && <p className="mt-3 text-xs text-faint">Notă: {report.resolution_note}</p>}
+                {report.resolution_note && <p className="mt-3 text-xs text-faint">Note: {report.resolution_note}</p>}
               </div>
               <div className="mt-5 flex flex-wrap gap-2 border-t border-line px-5 py-3">
                 {report.status === 'open' && (
                   <>
                     <Button size="sm" onClick={() => mutate.mutate({
                       path: `/reports/${report.id}`, method: 'PATCH',
-                      body: { status: 'resolved', resolution_note: 'Utilizator ascuns din clasamente.' },
+                      body: { status: 'resolved', resolution_note: 'User hidden from leaderboards.' },
                     })}>
-                      Rezolvă (ascunde userul)
+                      Resolve (hide user)
                     </Button>
                     <Button size="sm" variant="secondary" onClick={() => mutate.mutate({
                       path: `/reports/${report.id}`, method: 'PATCH',
-                      body: { status: 'rejected', resolution_note: 'Nu am găsit dovezi.' },
+                      body: { status: 'rejected', resolution_note: 'No evidence found.' },
                     })}>
-                      Respinge
+                      Reject
                     </Button>
                   </>
                 )}
                 {isAdmin && (
-                  <Button size="sm" variant="ghost" className="ml-auto hover:!text-danger" onClick={() => mutate.mutate({ path: `/reports/${report.id}`, method: 'DELETE' })}>Șterge</Button>
+                  <Button size="sm" variant="ghost" className="ml-auto hover:!text-danger" onClick={() => mutate.mutate({ path: `/reports/${report.id}`, method: 'DELETE' })}>Delete</Button>
                 )}
               </div>
             </Card>
           ))}
-          {reports.data?.length === 0 && <div className="panel rounded-3xl"><Empty icon="flag" title="Nicio raportare">Nu e nimic de moderat în această categorie.</Empty></div>}
+          {reports.data?.length === 0 && <div className="panel rounded-3xl"><Empty icon="flag" title="No reports">Nothing to moderate in this category.</Empty></div>}
         </div>
       )}
     </>
@@ -140,25 +140,25 @@ function UsersSection() {
   return (
     <>
       {isAdmin && <Card className="mb-8">
-        <SectionTitle>Utilizator nou</SectionTitle>
+        <SectionTitle>New user</SectionTitle>
         <form onSubmit={createUser} className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_9rem_auto]">
           <Field label="Username"><Input name="username" required /></Field>
           <Field label="Email"><Input name="email" type="email" /></Field>
-          <Field label="Parolă" hint="min. 8"><Input name="password" type="password" autoComplete="new-password" /></Field>
-          <Field label="Rol">
+          <Field label="Password" hint="min. 8"><Input name="password" type="password" autoComplete="new-password" /></Field>
+          <Field label="Role">
             <Select name="role" defaultValue="user">
               <option value="user">user</option>
               <option value="moderator">moderator</option>
               <option value="admin">admin</option>
             </Select>
           </Field>
-          <Button type="submit" className="!min-h-11">Creează</Button>
+          <Button type="submit" className="!min-h-11">Create</Button>
         </form>
       </Card>}
 
       <div className="relative mb-5 max-w-sm">
         <Icon name="search" className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-faint" />
-        <Input type="search" aria-label="Caută după username" placeholder="Caută după username" value={search} onChange={(event) => setSearch(event.target.value)} className="!pl-10" />
+        <Input type="search" aria-label="Search by username" placeholder="Search by username" value={search} onChange={(event) => setSearch(event.target.value)} className="!pl-10" />
       </div>
       <ErrorMessage error={users.error ?? mutate.error} />
 
@@ -172,15 +172,15 @@ function UsersSection() {
                   <span className="min-w-0">
                     <span className="flex items-center gap-2 truncate text-sm font-medium group-hover:text-white">
                       @{user.username}
-                      {user.is_banned && <span className="eyebrow !text-danger">banat</span>}
-                      {user.hidden_from_leaderboards && <span className="eyebrow">ascuns</span>}
+                      {user.is_banned && <span className="eyebrow !text-danger">banned</span>}
+                      {user.hidden_from_leaderboards && <span className="eyebrow">hidden</span>}
                     </span>
-                    <span className="num block truncate text-[11px] text-faint">#{user.id} · {user.email ?? 'fără email'}</span>
+                    <span className="num block truncate text-[11px] text-faint">#{user.id} · {user.email ?? 'no email'}</span>
                   </span>
                 </Link>
                 {isAdmin ? (
                   <Select
-                    aria-label={`Rolul lui ${user.username}`}
+                    aria-label={`Role of ${user.username}`}
                     className="w-36"
                     value={user.role}
                     onChange={(event) => mutate.mutate({ path: `/users/${user.id}`, method: 'PATCH', body: { role: event.target.value as Role } })}
@@ -193,14 +193,14 @@ function UsersSection() {
                   <span className="eyebrow rounded-md border border-line px-2 py-1">{user.role}</span>
                 )}
                 <Button size="sm" variant="secondary" onClick={() => mutate.mutate({ path: `/users/${user.id}`, method: 'PATCH', body: { is_banned: !user.is_banned } })}>
-                  {user.is_banned ? 'Debanează' : 'Banează'}
+                  {user.is_banned ? 'Unban' : 'Ban'}
                 </Button>
                 <Button size="sm" variant="secondary" onClick={() => mutate.mutate({ path: `/users/${user.id}`, method: 'PATCH', body: { hidden_from_leaderboards: !user.hidden_from_leaderboards } })}>
-                  {user.hidden_from_leaderboards ? 'Arată în clasament' : 'Ascunde'}
+                  {user.hidden_from_leaderboards ? 'Show on leaderboard' : 'Hide'}
                 </Button>
                 {isAdmin && (
-                  <Button size="sm" variant="ghost" className="hover:!text-danger" onClick={() => confirm(`Ștergi @${user.username} cu tot cu datele lui?`) && mutate.mutate({ path: `/users/${user.id}`, method: 'DELETE' })}>
-                    Șterge
+                  <Button size="sm" variant="ghost" className="hover:!text-danger" onClick={() => confirm(`Delete @${user.username} and all of their data?`) && mutate.mutate({ path: `/users/${user.id}`, method: 'DELETE' })}>
+                    Delete
                   </Button>
                 )}
               </li>
@@ -232,30 +232,30 @@ function PlatformsSection() {
             <li key={platform.id} className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3 last:border-b-0 sm:px-5">
               <span className="num w-16 text-sm text-muted">{platform.code}</span>
               <Input
-                aria-label={`Numele platformei ${platform.code}`}
+                aria-label={`Name of platform ${platform.code}`}
                 defaultValue={platform.name}
                 className="max-w-xs flex-1"
                 onBlur={(event) => event.target.value !== platform.name &&
                   mutate.mutate({ path: `/platforms/${platform.id}`, method: 'PATCH', body: { name: event.target.value } })}
               />
-              <Button size="sm" variant="secondary" title="Comută între provider real și mock" onClick={() => mutate.mutate({ path: `/platforms/${platform.id}`, method: 'PATCH', body: { is_mock: !platform.is_mock } })}>
+              <Button size="sm" variant="secondary" title="Toggle between real and mock provider" onClick={() => mutate.mutate({ path: `/platforms/${platform.id}`, method: 'PATCH', body: { is_mock: !platform.is_mock } })}>
                 <span className={`h-1.5 w-1.5 rounded-full ${platform.is_mock ? 'bg-faint' : 'bg-success'}`} />
                 {platform.is_mock ? 'Mock' : 'Real'}
               </Button>
-              <Button size="sm" variant="ghost" className="hover:!text-danger" onClick={() => mutate.mutate({ path: `/platforms/${platform.id}`, method: 'DELETE' })}>Șterge</Button>
+              <Button size="sm" variant="ghost" className="hover:!text-danger" onClick={() => mutate.mutate({ path: `/platforms/${platform.id}`, method: 'DELETE' })}>Delete</Button>
             </li>
           ))}
         </ul>
       </Card>
       <p className="mb-8 text-xs text-faint">
-        O platformă cu conturi sau jocuri nu poate fi ștearsă (ON DELETE RESTRICT): încearcă și vezi eroarea din baza de date.
+        A platform with accounts or games cannot be deleted (ON DELETE RESTRICT): try it and see the database error.
       </p>
       <Card>
-        <SectionTitle>Platformă nouă</SectionTitle>
+        <SectionTitle>New platform</SectionTitle>
         <form onSubmit={createPlatform} className="grid items-end gap-3 sm:grid-cols-[1fr_2fr_auto]">
-          <Field label="Cod"><Input name="code" placeholder="ex. gog" required /></Field>
-          <Field label="Nume"><Input name="name" required /></Field>
-          <Button type="submit" className="!min-h-11">Adaugă</Button>
+          <Field label="Code"><Input name="code" placeholder="e.g. gog" required /></Field>
+          <Field label="Name"><Input name="name" required /></Field>
+          <Button type="submit" className="!min-h-11">Add</Button>
         </form>
       </Card>
     </>

@@ -87,9 +87,9 @@ export function GameDetailPage() {
 
       {editingTitle ? (
         <form onSubmit={renameGame} className="mb-8 flex gap-2 border-b border-line pb-6">
-          <Input name="title" defaultValue={game.data.title} autoFocus aria-label="Titlul jocului" className="!min-h-12 !text-lg" />
-          <Button type="submit" className="!min-h-12">Salvează</Button>
-          <Button type="button" variant="ghost" className="!min-h-12" onClick={() => setEditingTitle(false)}>Renunță</Button>
+          <Input name="title" defaultValue={game.data.title} autoFocus aria-label="Game title" className="!min-h-12 !text-lg" />
+          <Button type="submit" className="!min-h-12">Save</Button>
+          <Button type="button" variant="ghost" className="!min-h-12" onClick={() => setEditingTitle(false)}>Cancel</Button>
         </form>
       ) : (
         <PageTitle
@@ -98,22 +98,22 @@ export function GameDetailPage() {
             <>
               {accountId && !owns && (
                 <Button onClick={() => mutate.mutate({ path: '/user-games', method: 'POST', body: { platform_account_id: accountId, game_id: gameId } })}>
-                  <Icon name="plus" className="h-4 w-4" /> Adaugă în bibliotecă
+                  <Icon name="plus" className="h-4 w-4" /> Add to library
                 </Button>
               )}
               {accountId && owns && (
                 <Button variant="ghost" onClick={() => mutate.mutate({ path: `/user-games/${accountId}/${gameId}`, method: 'DELETE' })}>
-                  Scoate din bibliotecă
+                  Remove from library
                 </Button>
               )}
               {isAdmin && (
                 <Button variant="secondary" onClick={() => setEditingTitle(true)}>
-                  <Icon name="edit" className="h-4 w-4" /> Redenumește
+                  <Icon name="edit" className="h-4 w-4" /> Rename
                 </Button>
               )}
               {isAdmin && (
-                <Button variant="danger" onClick={() => confirm('Ștergi jocul cu tot cu achievement-uri și progres?') && deleteGame.mutate()}>
-                  Șterge
+                <Button variant="danger" onClick={() => confirm('Delete this game along with its achievements and progress?') && deleteGame.mutate()}>
+                  Delete
                 </Button>
               )}
             </>
@@ -129,7 +129,7 @@ export function GameDetailPage() {
       {/* Rezumatul: progresul userului (dacă are jocul) + distribuția pe raritate */}
       <div className="mb-8 grid gap-3 md:grid-cols-[1fr_1.4fr]">
         <Card>
-          <p className="eyebrow mb-4">Progresul tău</p>
+          <p className="eyebrow mb-4">Your progress</p>
           {owns ? (
             <>
               <p className="mb-4">
@@ -141,13 +141,13 @@ export function GameDetailPage() {
           ) : (
             <p className="text-sm leading-relaxed text-muted">
               {accountId
-                ? 'Jocul nu e în biblioteca ta. Adaugă-l ca să-ți urmărești progresul.'
-                : 'Nu ai cont legat pe această platformă, deci nu poți debloca achievement-uri aici.'}
+                ? 'This game is not in your library. Add it to track your progress.'
+                : 'You have no linked account on this platform, so you cannot unlock achievements here.'}
             </p>
           )}
         </Card>
         <Card>
-          <p className="eyebrow mb-4 flex justify-between"><span>Raritate</span><span className="num">{game.data.achievements_count} total</span></p>
+          <p className="eyebrow mb-4 flex justify-between"><span>Rarity</span><span className="num">{game.data.achievements_count} total</span></p>
           {list.length > 0 && (
             <div className="mb-4 flex h-1.5 gap-0.5 overflow-hidden rounded-full">
               {byRarity.filter((r) => r.count > 0).map(({ rarity, count }) => (
@@ -166,7 +166,7 @@ export function GameDetailPage() {
         </Card>
       </div>
 
-      <SectionTitle aside={`${list.length} achievement-uri`}>Achievement-uri</SectionTitle>
+      <SectionTitle aside={`${list.length} achievements`}>Achievements</SectionTitle>
       <ul className="panel overflow-hidden rounded-3xl">
         {list.map((achievement) => {
           const unlocked = Boolean(achievement.unlocked_at);
@@ -183,26 +183,26 @@ export function GameDetailPage() {
                 {achievement.description && <p className="mt-0.5 text-[13px] leading-snug text-muted">{achievement.description}</p>}
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <RarityBadge rarity={achievement.rarity} />
-                  <span className="num text-[11px] text-faint">{pct === null ? '?' : Number(pct).toFixed(1)}% dintre jucători</span>
+                  <span className="num text-[11px] text-faint">{pct === null ? '?' : Number(pct).toFixed(1)}% of players</span>
                   {unlocked && (
-                    <span className="num text-[11px] text-gold/80">deblocat {new Date(achievement.unlocked_at!).toLocaleDateString('ro-RO')}</span>
+                    <span className="num text-[11px] text-gold/80">unlocked {new Date(achievement.unlocked_at!).toLocaleDateString('en-US')}</span>
                   )}
                 </div>
               </div>
               <div className="flex gap-2">
                 {owns && accountId && (
                   unlocked
-                    ? <Button variant="ghost" size="sm" onClick={() => mutate.mutate({ path: `/user-achievements/${accountId}/${achievement.id}`, method: 'DELETE' })}>Anulează</Button>
-                    : <Button variant="secondary" size="sm" onClick={() => mutate.mutate({ path: '/user-achievements', method: 'POST', body: { platform_account_id: accountId, achievement_id: achievement.id } })}>Deblochează</Button>
+                    ? <Button variant="ghost" size="sm" onClick={() => mutate.mutate({ path: `/user-achievements/${accountId}/${achievement.id}`, method: 'DELETE' })}>Undo</Button>
+                    : <Button variant="secondary" size="sm" onClick={() => mutate.mutate({ path: '/user-achievements', method: 'POST', body: { platform_account_id: accountId, achievement_id: achievement.id } })}>Unlock</Button>
                 )}
                 {isAdmin && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    aria-label={`Șterge ${achievement.name}`}
-                    title="Șterge achievement-ul"
+                    aria-label={`Delete ${achievement.name}`}
+                    title="Delete achievement"
                     className="!w-9 !px-0 hover:!text-danger"
-                    onClick={() => confirm(`Ștergi achievement-ul „${achievement.name}”?`) && mutate.mutate({ path: `/achievements/${achievement.id}`, method: 'DELETE' })}
+                    onClick={() => confirm(`Delete the achievement "${achievement.name}"?`) && mutate.mutate({ path: `/achievements/${achievement.id}`, method: 'DELETE' })}
                   >
                     <Icon name="x" className="h-4 w-4" />
                   </Button>
@@ -211,17 +211,17 @@ export function GameDetailPage() {
             </li>
           );
         })}
-        {list.length === 0 && <Empty title="Fără achievement-uri">Jocul nu are achievement-uri în catalog.</Empty>}
+        {list.length === 0 && <Empty title="No achievements">This game has no achievements in the catalog.</Empty>}
       </ul>
 
       {isAdmin && (
         <Card className="mt-6">
-          <SectionTitle>Adaugă achievement</SectionTitle>
+          <SectionTitle>Add achievement</SectionTitle>
           <form onSubmit={addAchievement} className="grid items-end gap-3 sm:grid-cols-[1fr_2fr_1fr_auto]">
-            <Field label="Id extern"><Input name="external_id" required /></Field>
-            <Field label="Nume"><Input name="name" required /></Field>
-            <Field label="% global" hint="0–100"><Input name="global_unlock_pct" type="number" step="0.01" min={0} max={100} /></Field>
-            <Button type="submit" className="!min-h-11">Adaugă</Button>
+            <Field label="External id"><Input name="external_id" required /></Field>
+            <Field label="Name"><Input name="name" required /></Field>
+            <Field label="Global %" hint="0–100"><Input name="global_unlock_pct" type="number" step="0.01" min={0} max={100} /></Field>
+            <Button type="submit" className="!min-h-11">Add</Button>
           </form>
         </Card>
       )}

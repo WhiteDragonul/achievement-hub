@@ -46,7 +46,7 @@ type GlobalPercentages = { achievementpercentages?: { achievements?: { name: str
 
 export class SteamProvider implements AchievementProvider {
   async fetchLibrary(account: LinkedAccount): Promise<ProviderGame[]> {
-    if (!config.steamApiKey) throw new Error('STEAM_API_KEY lipsește din configurație');
+    if (!config.steamApiKey) throw new Error('STEAM_API_KEY is missing from the configuration');
     const key = config.steamApiKey;
     const steamid = account.external_id;
 
@@ -54,7 +54,7 @@ export class SteamProvider implements AchievementProvider {
       key, steamid, include_appinfo: '1', include_played_free_games: '1',
     });
     if (!owned?.response.games) {
-      throw new Error('Steam nu arată jocurile: setează în Steam → Profil → Confidențialitate „Detalii joc” pe Public');
+      throw new Error('Steam is hiding your games: in Steam go to Profile → Privacy Settings and set "Game details" to Public');
     }
 
     // Cele mai jucate primele; jocurile neîncepute intră și ele (au achievement-uri, doar că 0 deblocate).

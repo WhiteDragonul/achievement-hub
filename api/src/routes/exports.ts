@@ -19,7 +19,7 @@ const FONT = require.resolve('dejavu-fonts-ttf/ttf/DejaVuSans.ttf');
 const FONT_BOLD = require.resolve('dejavu-fonts-ttf/ttf/DejaVuSans-Bold.ttf');
 
 const rarityLabels: Record<string, string> = {
-  ultra_rare: 'Ultra rar', very_rare: 'Foarte rar', rare: 'Rar', common: 'Comun',
+  ultra_rare: 'Ultra rare', very_rare: 'Very rare', rare: 'Rare', common: 'Common',
 };
 
 export async function exportsRoutes(app: FastifyInstance) {
@@ -32,8 +32,8 @@ export async function exportsRoutes(app: FastifyInstance) {
     const userId = Number(request.params.id);
     const copySql = `
       COPY (
-        SELECT p.name AS platforma, g.title AS joc, a.name AS achievement, a.rarity AS raritate,
-               a.global_unlock_pct AS procent_global, to_char(ua.unlocked_at, 'YYYY-MM-DD HH24:MI') AS deblocat_la
+        SELECT p.name AS platform, g.title AS game, a.name AS achievement, a.rarity AS rarity,
+               a.global_unlock_pct AS global_pct, to_char(ua.unlocked_at, 'YYYY-MM-DD HH24:MI') AS unlocked_at
         FROM platform_accounts pa
         JOIN platforms p          ON p.id = pa.platform_id
         JOIN user_achievements ua ON ua.platform_account_id = pa.id
@@ -90,15 +90,15 @@ export async function exportsRoutes(app: FastifyInstance) {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Achievement Hub';
 
-    const sheet = workbook.addWorksheet('Jocuri', { views: [{ state: 'frozen', ySplit: 1 }] });
+    const sheet = workbook.addWorksheet('Games', { views: [{ state: 'frozen', ySplit: 1 }] });
     sheet.columns = [
-      { header: 'Platformă', key: 'platforma', width: 22 },
-      { header: 'Joc', key: 'joc', width: 40 },
-      { header: 'Ore jucate', key: 'ore', width: 12 },
-      { header: 'Ultima dată', key: 'ultima_data', width: 14, style: { numFmt: 'yyyy-mm-dd' } },
-      { header: 'Deblocate', key: 'deblocate', width: 11 },
+      { header: 'Platform', key: 'platforma', width: 22 },
+      { header: 'Game', key: 'joc', width: 40 },
+      { header: 'Hours played', key: 'ore', width: 12 },
+      { header: 'Last played', key: 'ultima_data', width: 14, style: { numFmt: 'yyyy-mm-dd' } },
+      { header: 'Unlocked', key: 'deblocate', width: 11 },
       { header: 'Total', key: 'total', width: 9 },
-      { header: 'Progres', key: 'progres', width: 10, style: { numFmt: '0%' } },
+      { header: 'Progress', key: 'progres', width: 10, style: { numFmt: '0%' } },
     ];
     games.rows.forEach((game, index) => {
       const row = index + 2; // rândul 1 e antetul
@@ -109,9 +109,9 @@ export async function exportsRoutes(app: FastifyInstance) {
     sheet.getRow(1).font = { bold: true };
     sheet.autoFilter = { from: 'A1', to: 'G1' };
 
-    const summary = workbook.addWorksheet('Raritate');
-    summary.columns = [{ header: 'Raritate', key: 'r', width: 16 }, { header: 'Achievement-uri', key: 'n', width: 16 }];
-    for (const row of rarity.rows) summary.addRow({ r: row.rarity ? rarityLabels[row.rarity] : 'Necunoscută', n: row.n });
+    const summary = workbook.addWorksheet('Rarity');
+    summary.columns = [{ header: 'Rarity', key: 'r', width: 16 }, { header: 'Achievements', key: 'n', width: 16 }];
+    for (const row of rarity.rows) summary.addRow({ r: row.rarity ? rarityLabels[row.rarity] : 'Unknown', n: row.n });
     summary.addRow({ r: 'Total', n: { formula: `SUM(B2:B${rarity.rows.length + 1})` } });
     summary.getRow(1).font = { bold: true };
 
@@ -155,7 +155,7 @@ export async function exportsRoutes(app: FastifyInstance) {
       sql<{ status: string; n: number }>`SELECT status, count(*) AS n FROM sync_runs GROUP BY status ORDER BY status`.execute(db),
     ]);
 
-    const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Title: 'Achievement Hub: raport general' } });
+    const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Title: 'Achievement Hub: overview report' } });
     doc.registerFont('regular', FONT);
     doc.registerFont('bold', FONT_BOLD);
 
@@ -176,32 +176,32 @@ export async function exportsRoutes(app: FastifyInstance) {
       draw(headers, 'bold');
       rows.forEach((row) => draw(row, 'regular'));
     };
-    const number = (n: number) => n.toLocaleString('ro-RO');
+    const number = (n: number) => n.toLocaleString('en-US');
 
-    doc.font('bold').fontSize(20).fillColor('#111827').text('Achievement Hub: raport general');
+    doc.font('bold').fontSize(20).fillColor('#111827').text('Achievement Hub: overview report');
     doc.font('regular').fontSize(10).fillColor('#6b7280')
-      .text(`Generat la ${new Date().toLocaleString('ro-RO')} de ${request.user.username}`);
+      .text(`Generated on ${new Date().toLocaleString('en-US')} by ${request.user.username}`);
 
     const t = totals.rows[0];
-    heading('Volume');
-    table(['Utilizatori', 'Conturi legate', 'Jocuri', 'Achievement-uri', 'Deblocări'],
+    heading('Totals');
+    table(['Users', 'Linked accounts', 'Games', 'Achievements', 'Unlocks'],
       [[t.users, t.accounts, t.games, t.achievements, t.unlocks].map(number)], [95, 100, 80, 110, 110]);
 
-    heading('Platforme');
-    table(['Platformă', 'Conturi', 'Jocuri'], platforms.rows.map((p) => [p.name, number(p.accounts), number(p.games)]), [200, 100, 100]);
+    heading('Platforms');
+    table(['Platform', 'Accounts', 'Games'], platforms.rows.map((p) => [p.name, number(p.accounts), number(p.games)]), [200, 100, 100]);
 
-    heading('Top 10 jucători (scor după raritate)');
-    table(['#', 'Utilizator', 'Achievement-uri', 'Scor'],
+    heading('Top 10 players (rarity score)');
+    table(['#', 'User', 'Achievements', 'Score'],
       top.rows.map((row, i) => [i + 1, row.username, number(row.achievements), number(row.score)]), [30, 200, 120, 100]);
 
-    heading('Catalogul pe raritate');
-    table(['Raritate', 'Achievement-uri'],
-      rarity.rows.map((r) => [r.rarity ? rarityLabels[r.rarity] : 'Necunoscută', number(r.n)]), [200, 120]);
+    heading('Catalog by rarity');
+    table(['Rarity', 'Achievements'],
+      rarity.rows.map((r) => [r.rarity ? rarityLabels[r.rarity] : 'Unknown', number(r.n)]), [200, 120]);
 
-    heading('Moderare (raportări) și sincronizări');
-    table(['Raportări', 'Număr'], moderation.rows.map((r) => [r.status, number(r.n)]), [200, 120]);
+    heading('Moderation (reports) and syncs');
+    table(['Reports', 'Count'], moderation.rows.map((r) => [r.status, number(r.n)]), [200, 120]);
     doc.moveDown(0.5);
-    table(['Sincronizări', 'Număr'], syncs.rows.map((r) => [r.status, number(r.n)]), [200, 120]);
+    table(['Syncs', 'Count'], syncs.rows.map((r) => [r.status, number(r.n)]), [200, 120]);
 
     // PDFKit scrie documentul ca stream; îl adunăm într-un Buffer ca să știm la final dacă a reușit.
     const chunks: Buffer[] = [];

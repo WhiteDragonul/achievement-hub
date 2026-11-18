@@ -152,7 +152,7 @@ export function Segmented<T extends string>({ options, value, onChange, classNam
 // Încărcare: rânduri „schelet” în locul unui spinner (păstrează forma paginii, fără salt la afișare).
 export function Loading({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="space-y-2 py-2" role="status" aria-label="Se încarcă">
+    <div className="space-y-2 py-2" role="status" aria-label="Loading">
       {Array.from({ length: rows }, (_, index) => (
         <div key={index} className="panel h-14 animate-pulse rounded-2xl" style={{ animationDelay: `${index * 90}ms` }} />
       ))}
@@ -176,7 +176,7 @@ export function Empty({ icon = 'trophy', title, children }: { icon?: string; tit
 // Afișează mesajul API-ului și, dacă există, constrângerea din baza de date care a respins operația.
 export function ErrorMessage({ error }: { error: unknown }) {
   if (!error) return null;
-  const message = error instanceof Error ? error.message : 'Eroare necunoscută';
+  const message = error instanceof Error ? error.message : 'Unknown error';
   const constraint = error instanceof ApiError ? error.constraint : undefined;
   return (
     <p role="alert" className="mb-4 flex items-start gap-2.5 rounded-2xl border border-danger/35 bg-[rgb(60_8_30/0.45)] px-4 py-3 text-sm text-[#ffc9cf] backdrop-blur-xl">
@@ -191,10 +191,10 @@ export function ErrorMessage({ error }: { error: unknown }) {
 
 // Raritatea: punct colorat + text (culoarea nu e singurul indiciu).
 export const rarityStyles: Record<Rarity, { label: string; text: string; dot: string; ring: string }> = {
-  ultra_rare: { label: 'Ultra rar', text: 'text-rarity-ultra', dot: 'bg-rarity-ultra', ring: 'ring-rarity-ultra/60' },
-  very_rare: { label: 'Foarte rar', text: 'text-rarity-very', dot: 'bg-rarity-very', ring: 'ring-rarity-very/50' },
-  rare: { label: 'Rar', text: 'text-rarity-rare', dot: 'bg-rarity-rare', ring: 'ring-rarity-rare/45' },
-  common: { label: 'Comun', text: 'text-rarity-common', dot: 'bg-rarity-common', ring: 'ring-white/10' },
+  ultra_rare: { label: 'Ultra rare', text: 'text-rarity-ultra', dot: 'bg-rarity-ultra', ring: 'ring-rarity-ultra/60' },
+  very_rare: { label: 'Very rare', text: 'text-rarity-very', dot: 'bg-rarity-very', ring: 'ring-rarity-very/50' },
+  rare: { label: 'Rare', text: 'text-rarity-rare', dot: 'bg-rarity-rare', ring: 'ring-rarity-rare/45' },
+  common: { label: 'Common', text: 'text-rarity-common', dot: 'bg-rarity-common', ring: 'ring-white/10' },
 };
 
 export function RarityBadge({ rarity }: { rarity: Rarity | null }) {
@@ -261,11 +261,11 @@ export function Pager({ page, hasNext, onChange }: { page: number; hasNext: bool
   return (
     <div className="mt-6 flex items-center justify-between">
       <Button variant="ghost" size="sm" disabled={page === 0} onClick={() => onChange(page - 1)}>
-        <Icon name="arrowLeft" className="h-4 w-4" /> Înapoi
+        <Icon name="arrowLeft" className="h-4 w-4" /> Previous
       </Button>
-      <span className="num text-xs text-faint">pagina {page + 1}</span>
+      <span className="num text-xs text-faint">page {page + 1}</span>
       <Button variant="ghost" size="sm" disabled={!hasNext} onClick={() => onChange(page + 1)}>
-        Următoarea <Icon name="arrowRight" className="h-4 w-4" />
+        Next <Icon name="arrowRight" className="h-4 w-4" />
       </Button>
     </div>
   );

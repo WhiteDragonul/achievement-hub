@@ -11,10 +11,10 @@ import { Avatar, Icon, Loading } from './ui';
 function useNavItems() {
   const { userId, isModerator } = useCurrentUser();
   const items = [
-    { to: '/', label: 'Clasament', icon: 'trophy' },
-    { to: '/games', label: 'Jocuri', icon: 'games' },
-    { to: `/users/${userId}`, label: 'Profil', icon: 'user' },
-    { to: '/friends', label: 'Prieteni', icon: 'friends' },
+    { to: '/', label: 'Leaderboard', icon: 'trophy' },
+    { to: '/games', label: 'Games', icon: 'games' },
+    { to: `/users/${userId}`, label: 'Profile', icon: 'user' },
+    { to: '/friends', label: 'Friends', icon: 'friends' },
   ];
   // Pagina Admin apare doar pentru moderatori și admini (API-ul verifică oricum rolul la fiecare cerere).
   if (isModerator) items.push({ to: '/admin', label: 'Admin', icon: 'shield' });
@@ -29,7 +29,7 @@ function useActiveIndex(items: { to: string }[]) {
     item.to === '/' ? pathname === '/' : pathname === item.to || pathname.startsWith(`${item.to}/`));
 }
 
-const roleLabels = { user: 'Jucător', moderator: 'Moderator', admin: 'Administrator' };
+const roleLabels = { user: 'Player', moderator: 'Moderator', admin: 'Administrator' };
 
 // Semnul aplicației: o cupă pe o plăcuță de sticlă în culorile apusului.
 export function Logo({ size = 32 }: { size?: number }) {
@@ -48,8 +48,8 @@ function LogoutButton() {
   return (
     <button
       onClick={logout}
-      title="Deconectare"
-      aria-label="Deconectare"
+      title="Sign out"
+      aria-label="Sign out"
       className="pressable flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-raised hover:text-fg"
     >
       <Icon name="logout" className="h-4 w-4" />
@@ -73,7 +73,7 @@ function Shell() {
           <span className="text-[15px] font-extrabold tracking-tight">Achievement Hub</span>
         </div>
 
-        <p className="eyebrow mb-2 px-4">Meniu</p>
+        <p className="eyebrow mb-2 px-4">Menu</p>
         <nav className="relative flex flex-col gap-0.5">
           {active >= 0 && (
             <span

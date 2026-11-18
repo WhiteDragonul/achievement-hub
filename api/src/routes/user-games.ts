@@ -60,7 +60,7 @@ export async function userGamesRoutes(app: FastifyInstance) {
       .where('platform_account_id', '=', platformAccountId)
       .where('game_id', '=', gameId)
       .executeTakeFirst();
-    return userGame ?? reply.code(404).send(notFound('Jocul deținut'));
+    return userGame ?? reply.code(404).send(notFound('Owned game'));
   });
 
   // PRIMARY KEY compus → 409 dacă jocul e deja în lista contului.
@@ -101,7 +101,7 @@ export async function userGamesRoutes(app: FastifyInstance) {
         .where('game_id', '=', gameId)
         .returningAll()
         .executeTakeFirst();
-      return userGame ?? reply.code(404).send(notFound('Jocul deținut'));
+      return userGame ?? reply.code(404).send(notFound('Owned game'));
     },
   );
 
@@ -113,7 +113,7 @@ export async function userGamesRoutes(app: FastifyInstance) {
       .where('platform_account_id', '=', platformAccountId)
       .where('game_id', '=', gameId)
       .executeTakeFirst();
-    if (result.numDeletedRows === 0n) return reply.code(404).send(notFound('Jocul deținut'));
+    if (result.numDeletedRows === 0n) return reply.code(404).send(notFound('Owned game'));
     return reply.code(204).send();
   });
 }

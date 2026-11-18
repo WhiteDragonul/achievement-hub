@@ -59,7 +59,7 @@ test('rapoarte: CSV (COPY), Excel și PDF', async () => {
   const csv = await get(`/api/exports/users/${user.id}/achievements.csv`);
   assert.equal(csv.statusCode, 200);
   const lines = csv.body.trim().split('\n');
-  assert.equal(lines[0], 'platforma,joc,achievement,raritate,procent_global,deblocat_la');
+  assert.equal(lines[0], 'platform,game,achievement,rarity,global_pct,unlocked_at');
   assert.ok(lines.length > 1);
 
   const xlsx = await get(`/api/exports/users/${user.id}/library.xlsx`);

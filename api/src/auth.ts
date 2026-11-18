@@ -89,7 +89,7 @@ export async function createSession(user: AuthUser, userAgent: string | undefine
 export async function authenticate(request: FastifyRequest, reply: FastifyReply) {
   const header = request.headers.authorization;
   const user = header?.startsWith('Bearer ') ? verifyAccessToken(header.slice(7)) : null;
-  if (!user) return reply.code(401).send({ error: 'Autentificare necesară' });
+  if (!user) return reply.code(401).send({ error: 'Authentication required' });
   request.user = user;
 }
 
@@ -98,7 +98,7 @@ const roleRank: Record<Role, number> = { user: 1, moderator: 2, admin: 3 };
 export const hasRole = (user: AuthUser, role: Role) => roleRank[user.role] >= roleRank[role];
 
 // Erorile aruncate cu statusCode < 500 sunt trimise clientului de errorHandler (errors.ts).
-export function forbid(message = 'Nu ai dreptul să faci această operație'): never {
+export function forbid(message = 'You are not allowed to do this'): never {
   throw Object.assign(new Error(message), { statusCode: 403 });
 }
 

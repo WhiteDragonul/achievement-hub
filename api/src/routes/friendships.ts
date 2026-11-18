@@ -90,7 +90,7 @@ export async function friendshipsRoutes(app: FastifyInstance) {
       .where('status', '=', 'pending')
       .returningAll()
       .executeTakeFirst();
-    return friendship ?? reply.code(404).send(notFound('Cererea de prietenie în așteptare'));
+    return friendship ?? reply.code(404).send(notFound('Pending friend request'));
   });
 
   app.delete<{ Params: PairParams }>('/friendships/:requesterId/:addresseeId', {

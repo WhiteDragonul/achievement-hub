@@ -66,7 +66,7 @@ export async function steamAuthRoutes(app: FastifyInstance) {
     const fail = (message: string) => back({ error: message });
 
     const steamid = await verifySteamResponse(request.query);
-    if (!steamid) return fail('Login Steam invalid');
+    if (!steamid) return fail('Invalid Steam sign-in');
 
     const steam = await db.selectFrom('platforms').select('id').where('code', '=', 'steam').executeTakeFirstOrThrow();
     const owner = await db.selectFrom('platform_accounts')
@@ -79,8 +79,8 @@ export async function steamAuthRoutes(app: FastifyInstance) {
     // ---- 4b. Legare la userul logat ----
     if (request.query.link !== undefined) {
       const userId = verifySteamLinkState(request.query.link);
-      if (!userId) return fail('Cererea de legare a expirat. Încearcă din nou.');
-      if (owner && owner.id !== userId) return fail('Acest cont Steam e deja legat de alt utilizator');
+      if (!userId) return fail('The link request expired. Please try again.');
+      if (owner && owner.id !== userId) return fail('This Steam account is already linked to another user');
       if (!owner) {
         const persona = await fetchSteamPersona(steamid);
         const account = await db.transaction().execute(async (trx) => {
@@ -96,7 +96,7 @@ export async function steamAuthRoutes(app: FastifyInstance) {
           }
           return created;
         }).catch(() => null);
-        if (!account) return fail('Ai deja un cont Steam legat. Dezleagă-l întâi.');
+        if (!account) return fail('You already have a linked Steam account. Unlink it first.');
         await requestSync(account.id);
       }
       return back({ linked: 'steam' });
@@ -121,7 +121,7 @@ export async function steamAuthRoutes(app: FastifyInstance) {
       await requestSync(created.accountId);
       user = created.newUser;
     }
-    if (user.is_banned) return fail('Contul este suspendat');
+    if (user.is_banned) return fail('This account is suspended');
 
     const session = await createSession({ id: user.id, role: user.role, username: user.username }, request.headers['user-agent']);
     // Tokenurile merg în fragmentul URL-ului (#...): browserul nu îl trimite la niciun server și nu apare în loguri.

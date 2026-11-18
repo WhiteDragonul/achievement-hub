@@ -39,47 +39,47 @@ export function FriendsPage() {
 
   return (
     <>
-      <PageTitle eyebrow="Social" subtitle="Compară-ți progresul cu prietenii în clasamentul dedicat lor.">
-        Prieteni
+      <PageTitle eyebrow="Social" subtitle="Compare your progress with friends on their own leaderboard.">
+        Friends
       </PageTitle>
       <ErrorMessage error={friendships.error ?? mutate.error} />
 
       <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
         <div className="min-w-0">
           {incoming.length > 0 && (
-            <Section title="Cereri primite" count={incoming.length} highlight>
+            <Section title="Incoming requests" count={incoming.length} highlight>
               {incoming.map((f) => (
-                <FriendRow key={pairPath(f)} {...other(f)} note="vrea să fiți prieteni">
-                  <Button size="sm" onClick={() => mutate.mutate({ path: pairPath(f), method: 'PATCH', body: { status: 'accepted' } })}>Acceptă</Button>
-                  <Button size="sm" variant="ghost" onClick={() => mutate.mutate({ path: pairPath(f), method: 'DELETE' })}>Refuză</Button>
+                <FriendRow key={pairPath(f)} {...other(f)} note="wants to be friends">
+                  <Button size="sm" onClick={() => mutate.mutate({ path: pairPath(f), method: 'PATCH', body: { status: 'accepted' } })}>Accept</Button>
+                  <Button size="sm" variant="ghost" onClick={() => mutate.mutate({ path: pairPath(f), method: 'DELETE' })}>Decline</Button>
                 </FriendRow>
               ))}
             </Section>
           )}
 
-          <Section title="Prieteni" count={friends.length}>
+          <Section title="Friends" count={friends.length}>
             {friends.map((f) => (
               <FriendRow key={pairPath(f)} {...other(f)}>
                 <Button
                   size="sm"
                   variant="ghost"
                   className="hover:!text-danger"
-                  onClick={() => confirm('Ștergi prietenia?') && mutate.mutate({ path: pairPath(f), method: 'DELETE' })}
+                  onClick={() => confirm('Remove this friend?') && mutate.mutate({ path: pairPath(f), method: 'DELETE' })}
                 >
-                  Șterge
+                  Remove
                 </Button>
               </FriendRow>
             ))}
             {friends.length === 0 && (
-              <li><Empty icon="friends" title="Încă nu ai prieteni">Caută un jucător după username și trimite-i o cerere.</Empty></li>
+              <li><Empty icon="friends" title="No friends yet">Search for a player by username and send them a request.</Empty></li>
             )}
           </Section>
 
           {outgoing.length > 0 && (
-            <Section title="Cereri trimise" count={outgoing.length}>
+            <Section title="Sent requests" count={outgoing.length}>
               {outgoing.map((f) => (
-                <FriendRow key={pairPath(f)} {...other(f)} note="în așteptare">
-                  <Button size="sm" variant="ghost" onClick={() => mutate.mutate({ path: pairPath(f), method: 'DELETE' })}>Anulează</Button>
+                <FriendRow key={pairPath(f)} {...other(f)} note="pending">
+                  <Button size="sm" variant="ghost" onClick={() => mutate.mutate({ path: pairPath(f), method: 'DELETE' })}>Cancel</Button>
                 </FriendRow>
               ))}
             </Section>
@@ -89,19 +89,19 @@ export function FriendsPage() {
         {/* Căutarea stă lângă listă pe desktop și deasupra ei pe telefon. */}
         <aside className="order-first lg:order-none">
           <Card className="lg:sticky lg:top-14">
-            <SectionTitle>Adaugă un prieten</SectionTitle>
+            <SectionTitle>Add a friend</SectionTitle>
             <div className="relative">
               <Icon name="search" className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-faint" />
               <Input
                 type="search"
-                aria-label="Caută după username"
+                aria-label="Search by username"
                 placeholder="username"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 className="!pl-10"
               />
             </div>
-            {search.length > 0 && search.length < 2 && <p className="mt-2 text-xs text-faint">Scrie cel puțin 2 caractere.</p>}
+            {search.length > 0 && search.length < 2 && <p className="mt-2 text-xs text-faint">Type at least 2 characters.</p>}
             <ul className="mt-3 space-y-1">
               {results.data?.filter((user) => user.id !== userId).map((user) => (
                 <li key={user.id} className="flex items-center gap-3 rounded-lg px-1 py-1.5">
@@ -110,7 +110,7 @@ export function FriendsPage() {
                   <Button
                     size="sm"
                     variant="secondary"
-                    aria-label={`Trimite cerere lui ${user.username}`}
+                    aria-label={`Send a request to ${user.username}`}
                     onClick={() => mutate.mutate({ path: '/friendships', method: 'POST', body: { requester_id: userId, addressee_id: user.id } })}
                   >
                     <Icon name="plus" className="h-4 w-4" />
@@ -118,7 +118,7 @@ export function FriendsPage() {
                 </li>
               ))}
               {results.data && results.data.filter((user) => user.id !== userId).length === 0 && (
-                <li className="py-2 text-sm text-faint">Niciun jucător găsit.</li>
+                <li className="py-2 text-sm text-faint">No players found.</li>
               )}
             </ul>
           </Card>

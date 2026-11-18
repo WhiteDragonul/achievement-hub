@@ -13,8 +13,8 @@ const PAGE_SIZE = 20;
 const medalText = ['text-gold', 'text-silver', 'text-bronze'];
 
 const scopes = [
-  { id: 'all', label: 'Toți' },
-  { id: 'friends', label: 'Prieteni' },
+  { id: 'all', label: 'Everyone' },
+  { id: 'friends', label: 'Friends' },
 ] as const;
 
 export function LeaderboardPage() {
@@ -42,16 +42,16 @@ export function LeaderboardPage() {
   return (
     <>
       <PageTitle
-        eyebrow="Clasament"
-        subtitle="Scorul adună raritatea fiecărui achievement: ultra rar 50, foarte rar 20, rar 5, comun 1 punct."
+        eyebrow="Leaderboard"
+        subtitle="Your score adds up the rarity of every achievement: ultra rare 50, very rare 20, rare 5, common 1 point."
       >
-        Cei mai buni vânători
+        Top trophy hunters
       </PageTitle>
 
       <div className="mb-8 flex flex-wrap items-center gap-3">
         <Segmented options={scopes} value={scope} onChange={(value) => { setScope(value); setPage(0); }} className="w-56" />
         <Select value={platformId} onChange={(event) => { setPlatformId(event.target.value); setPage(0); }} className="w-52">
-          <option value="">Toate platformele</option>
+          <option value="">All platforms</option>
           {platforms.data?.map((platform) => <option key={platform.id} value={platform.id}>{platform.name}</option>)}
         </Select>
       </div>
@@ -64,15 +64,15 @@ export function LeaderboardPage() {
           {rest.length > 0 && (
             <ol className="panel overflow-hidden rounded-3xl">
               <li className="eyebrow hidden grid-cols-[3.5rem_1fr_7rem_7rem_6rem] items-center border-b border-line px-5 py-3 sm:grid">
-                <span>#</span><span>Jucător</span><span className="text-right">Achievement-uri</span><span className="text-right">Rare</span><span className="text-right">Scor</span>
+                <span>#</span><span>Player</span><span className="text-right">Achievements</span><span className="text-right">Rare</span><span className="text-right">Scor</span>
               </li>
               {rest.map((row) => <Row key={row.user_id} row={row} isMe={row.user_id === userId} />)}
             </ol>
           )}
           {rows.length === 0 && (
             <div className="panel rounded-3xl">
-              <Empty title="Nimeni în clasament încă">
-                {scope === 'friends' ? 'Adaugă prieteni ca să vă comparați scorurile.' : 'Clasamentul se umple după primele sincronizări.'}
+              <Empty title="Nobody on the leaderboard yet">
+                {scope === 'friends' ? 'Add friends to compare your scores.' : 'The leaderboard fills up after the first syncs.'}
               </Empty>
             </div>
           )}
@@ -110,11 +110,11 @@ function Podium({ rows, currentUserId }: { rows: LeaderboardRow[]; currentUserId
             <p className="truncate text-xs text-faint">@{row.username}</p>
             <div className="mt-4 flex items-end justify-between border-t border-line pt-4">
               <span>
-                <span className={`num block text-2xl ${first ? 'text-gold' : 'text-fg'}`}>{Number(row.score).toLocaleString('ro-RO')}</span>
-                <span className="eyebrow">puncte</span>
+                <span className={`num block text-2xl ${first ? 'text-gold' : 'text-fg'}`}>{Number(row.score).toLocaleString('en-US')}</span>
+                <span className="eyebrow">points</span>
               </span>
               <span className="num text-right text-xs text-muted">
-                {Number(row.achievements).toLocaleString('ro-RO')} ach.<br />{row.rare_achievements} rare
+                {Number(row.achievements).toLocaleString('en-US')} ach.<br />{row.rare_achievements} rare
               </span>
             </div>
           </Link>
@@ -137,17 +137,17 @@ function Row({ row, isMe }: { row: LeaderboardRow; isMe: boolean }) {
           <span className="min-w-0">
             <span className="block truncate text-sm font-medium">
               {row.display_name ?? row.username}
-              {isMe && <span className="eyebrow ml-2 !text-gold">tu</span>}
+              {isMe && <span className="eyebrow ml-2 !text-gold">you</span>}
             </span>
             <span className="block truncate text-xs text-faint sm:hidden">
-              {Number(row.achievements).toLocaleString('ro-RO')} achievement-uri · {row.rare_achievements} rare
+              {Number(row.achievements).toLocaleString('en-US')} achievements · {row.rare_achievements} rare
             </span>
             <span className="hidden truncate text-xs text-faint sm:block">@{row.username}</span>
           </span>
         </span>
-        <span className="num hidden text-right text-sm text-muted sm:block">{Number(row.achievements).toLocaleString('ro-RO')}</span>
+        <span className="num hidden text-right text-sm text-muted sm:block">{Number(row.achievements).toLocaleString('en-US')}</span>
         <span className="num hidden text-right text-sm text-muted sm:block">{row.rare_achievements}</span>
-        <span className="num text-right text-sm font-medium">{Number(row.score).toLocaleString('ro-RO')}</span>
+        <span className="num text-right text-sm font-medium">{Number(row.score).toLocaleString('en-US')}</span>
       </Link>
     </li>
   );
