@@ -25,8 +25,11 @@ export function buildServer({ logger = true } = {}) {
   app.setErrorHandler(errorHandler);
 
   // Frontend-ul de pe GitHub Pages (WEB_URL) cheamă API-ul de pe alt domeniu, deci browserul cere CORS (D48).
-  // Permitem doar originea frontend-ului și serverul Vite local, nu orice site.
-  app.register(cors, { origin: [new URL(config.webUrl).origin, 'http://localhost:5173'] });
+  // Permitem doar originea frontend-ului, serverul Vite local și aplicațiile Tauri, nu orice site.
+  // Tauri servește interfața de pe tauri://localhost (macOS, iOS) și http://tauri.localhost (Windows).
+  app.register(cors, {
+    origin: [new URL(config.webUrl).origin, 'http://localhost:5173', 'tauri://localhost', 'http://tauri.localhost'],
+  });
 
   // Verifică și conexiunea la DB, nu doar că procesul rulează (folosit de healthcheck-ul din Docker Compose).
   app.get('/health', async () => {

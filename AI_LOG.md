@@ -151,3 +151,15 @@ admin cu raportări lizibile. Etichete vizibile pe câmpuri, focus vizibil, făr
 **Verificat:** `npm run build`; în browser (desktop 1440 și mobil 375) cu un API simulat local (DB-ul local nu rula),
 toate paginile, fără erori în consolă.
 **Neverificat:** cu API-ul și datele reale; în shell-ul Tauri.
+
+## Logo, găzduire gratuită, aplicații Tauri (2026-11-18)
+**Prompt:** „fă-mi în Canva un icon gen logo pentru site, să fie un trofeu și în spate o coroană. vreau de asemenea să fie
+aplicație pentru Windows, Mac și iOS [...] să fie și site-ul”, apoi „vreau ca baza de date să fie mereu pornită când intru pe
+site”, „vreau să fie pe un server gratuit, nu pe laptopul meu” și „există deja pe Supabase, dar e pe alt cont”.
+**Rezultat:** logo generat în Canva (în contul Canva al autorului) și desenat ca SVG pentru iconițe (`app/icon/logo.svg`,
+favicon pe site); `render.yaml` + worker în procesul API-ului + `keepalive.yml` (D50); shell Tauri 2 în `app/` cu Keychain,
+deep-link Steam și CORS pentru originile Tauri (D51); workflow `app.yml` (Windows, macOS, iOS simulator); `docs/build.md`.
+**Verificat:** `cargo check`, `tsc` (web, api); build macOS (`.app` pornește, schema înregistrată); build iOS pentru simulator,
+rulat pe iPhone 18 Pro (pagina de login). Testele API: 21/25, aceleași 4 eșecuri ca înainte de modificări.
+**Neverificat:** deploy-ul pe Render și conexiunea la Supabase (cer contul autorului); build-ul Windows (rulează doar în CI);
+login-ul Steam prin deep-link (cere API-ul găzduit).

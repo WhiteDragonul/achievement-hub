@@ -1,0 +1,32 @@
+# Render Blueprint (D50): API-ul + worker-ul într-un singur serviciu web gratuit, construit din api/Dockerfile.
+# Baza de date rămâne pe Supabase; DATABASE_URL și cheile se completează în panoul Render (sync: false = nu stau în repo).
+services:
+  - type: web
+    name: achievement-hub-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: "true"
+      - key: TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: STEAM_API_KEY
+        sync: false
+      - key: RUN_WORKER_IN_API
+        value: "true"
+      - key: PUBLIC_API_URL
+        value: https://achievement-hub-api.onrender.com
+      - key: WEB_URL
+        value: https://whitedragonul.github.io/achievement-hub
+      - key: SEED_ON_START
+        value: "false"
+      - key: ALLOW_MOCK_PLATFORMS
+        value: "false"

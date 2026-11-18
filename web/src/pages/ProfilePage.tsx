@@ -11,6 +11,7 @@ import {
   type SyncRun, type UnlockedAchievement,
 } from '../api';
 import { useAuth, useCurrentUser } from '../auth';
+import { isApp, openExternal } from '../native';
 import {
   Avatar, Button, Card, Empty, ErrorMessage, Field, Icon, Input, Loading, PlatformBadge, ProgressBar, RarityBadge, SectionTitle, Select,
   fieldClass, rarityStyles,
@@ -564,8 +565,8 @@ function ConnectPlatforms({ userId, linked, onLinked }: { userId: number; linked
   const available = platforms.data?.filter((platform) => !linked.some((account) => account.platform_id === platform.id)) ?? [];
 
   const connectSteam = useMutation({
-    mutationFn: () => api<{ url: string }>('/auth/steam/link', { method: 'POST', body: { client: 'web' } }),
-    onSuccess: ({ url }) => window.location.assign(url),
+    mutationFn: () => api<{ url: string }>('/auth/steam/link', { method: 'POST', body: { client: isApp ? 'app' : 'web' } }),
+    onSuccess: ({ url }) => openExternal(url),
   });
 
   if (available.length === 0) return null;

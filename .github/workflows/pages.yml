@@ -36,7 +36,8 @@ jobs:
       - run: npm run build -- --base=/achievement-hub/
         working-directory: web
         env:
-          VITE_API_URL: ${{ vars.API_URL }}
+          # API-ul găzduit pe Render (D50); variabila de repo API_URL îl poate înlocui (ex. tunelul din D48).
+          VITE_API_URL: ${{ vars.API_URL || 'https://achievement-hub-api.onrender.com' }}
       # Pages nu știe de rutele React: orice adresă necunoscută (ex. /auth/callback) primește 404.html,
       # care e chiar aplicația, iar React Router afișează pagina corectă.
       - run: cp web/dist/index.html web/dist/404.html

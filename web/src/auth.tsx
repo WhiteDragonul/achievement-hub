@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      if (storedRefreshToken() && (await refreshSession())) await loadMe().catch(() => setUser(null));
+      if ((await storedRefreshToken()) && (await refreshSession())) await loadMe().catch(() => setUser(null));
       setLoading(false);
     })();
     // Refresh token-ul a expirat sau a fost revocat (ex. cont suspendat) → înapoi la login.
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadMe]);
 
   async function start(session: Session) {
-    saveSession(session);
+    await saveSession(session);
     queryClient.clear(); // datele userului anterior nu trebuie să apară în sesiunea nouă
     await loadMe();
   }
@@ -50,14 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     register: async (username, email, password) =>
       start(await api<Session>('/auth/register', { method: 'POST', body: { username, email, password } })),
     acceptTokens: async (tokens) => {
-      saveSession(tokens);
+      await saveSession(tokens);
       queryClient.clear();
       await loadMe();
     },
     logout: async () => {
-      const refresh_token = storedRefreshToken();
+      const refresh_token = await storedRefreshToken();
       if (refresh_token) await api('/auth/logout', { method: 'POST', body: { refresh_token } }).catch(() => {});
-      clearSession();
+      await clearSession();
       queryClient.clear();
       setUser(null);
     },

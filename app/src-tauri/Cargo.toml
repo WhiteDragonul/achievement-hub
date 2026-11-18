@@ -1,0 +1,25 @@
+[package]
+name = "achievement-hub"
+version = "0.1.0"
+description = "Achievement Hub: clientul desktop și mobil (Tauri 2)"
+edition = "2024"
+rust-version = "1.90"
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.5", features = [] }
+
+[dependencies]
+tauri = { version = "2.12.6", features = [] }
+serde_json = "1.0"
+tauri-plugin-deep-link = "2"
+tauri-plugin-opener = "2"
+# Keychain (macOS, iOS) și Credential Manager (Windows): refresh token-ul nu stă în localStorage (D51).
+keyring = { version = "3", features = ["apple-native", "windows-native"] }
+
+# Pe Windows / macOS / Linux, un al doilea clic pe un link achievementhub:// trebuie să ajungă la aplicația deja deschisă.
+[target.'cfg(any(windows, target_os = "linux", target_os = "macos"))'.dependencies]
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }

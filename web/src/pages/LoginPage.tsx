@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 import { steamLoginUrl } from '../api';
+import { isApp, openExternal } from '../native';
 import { useAuth } from '../auth';
 import { Logo } from '../components/Layout';
 import { Button, ErrorMessage, Field, Input, Segmented, rarityStyles } from '../components/ui';
@@ -76,6 +77,8 @@ export function LoginPage() {
 
           <a
             href={steamLoginUrl}
+            // În aplicație login-ul Steam se face în browserul sistemului; revine prin deep-link (D51).
+            onClick={(event) => { if (isApp) { event.preventDefault(); openExternal(steamLoginUrl); } }}
             className="pressable flex min-h-11 items-center justify-center gap-2.5 rounded-lg border border-line-strong bg-raised text-sm font-medium hover:border-white/20 hover:bg-hover"
           >
             <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="currentColor" aria-hidden>

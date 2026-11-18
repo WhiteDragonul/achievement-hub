@@ -56,4 +56,5 @@ Documentul de prezentare (`docs/prezentare.md`) se completează la fiecare etap�
 ## Stare curentă
 Etapele 0–5 gata, plus 3b (sync Steam/mock cu pg-boss) și UI „Sunset Glass” (D49, înlocuiește D42). Load test k6 rulat
 (`docs/loadtest.md`). Doar date reale implicit (D45), conectare Steam prin OpenID (D47), profil personalizabil (009, D46).
-Rămase: 3c (Tauri), etapa 6 (prezentarea finală).
+3c: shell Tauri în `app/` (D51), găzduire gratuită Render + Supabase (D50), vezi `docs/build.md`.
+Rămase: deploy pe Render cu baza Supabase a autorului, etapa 6 (prezentarea finală).

@@ -23,5 +23,7 @@ export const config = {
   seedOnStart: process.env.SEED_ON_START === 'true',
   // PSN / Xbox / Epic nu au încă un provider real; cu false nu se pot lega conturi pe ele (doar date reale).
   allowMockPlatforms: process.env.ALLOW_MOCK_PLATFORMS === 'true',
+  // Pe hosting gratuit (un singur serviciu) joburile de sync rulează în procesul API-ului (D50).
+  runWorkerInApi: process.env.RUN_WORKER_IN_API === 'true',
   fixturePassword: process.env.FIXTURE_PASSWORD ?? 'Parola123!',
 };

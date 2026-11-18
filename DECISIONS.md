@@ -287,3 +287,22 @@ Accentul e apusul (roz → portocaliu, butonul principal); auriul e rezervat tro
 se arată cu punct colorat + text (nu doar culoare). Fonturile sunt incluse în aplicație (fontsource), ca să meargă offline în Tauri.
 Detaliu tehnic: un strămoș cu `transform` rămas după o animație (fill-mode `both`) oprește `backdrop-filter` în Chrome, deci
 animația de intrare (`rise`) folosește `backwards` și se aplică doar titlului paginii, nu lui `<main>`.
+
+**D50: Găzduire gratuită: API + worker pe Render (un singur serviciu), baza pe Supabase, ping la 10 minute.**
+Aplicația trebuie să meargă fără laptop (prezentarea la convenție, aplicațiile instalate). Render are un plan gratuit
+pentru un serviciu web din Docker, dar nu și pentru un worker separat, deci joburile pg-boss rulează în procesul API-ului
+când `RUN_WORKER_IN_API=true` (logica mutată în `api/src/sync/jobs.ts`, folosită și de `worker.ts`, deci Docker Compose
+rămâne la fel). Serviciul gratuit adoarme după 15 minute, iar Supabase gratuit se oprește după 7 zile fără activitate;
+workflow-ul `keepalive.yml` cheamă `/health` (care face o interogare în DB) la 10 minute și le ține pe amândouă pornite.
+Alternative: Fly.io / Railway (mereu pornite, dar cer card), laptopul cu tunel (D48, depinde de laptop). D48 rămâne
+pentru dezvoltare.
+
+**D51: Shell Tauri 2 (`app/`) peste aceeași interfață; tokenul în Keychain; login Steam prin deep-link.**
+Aplicația nu are logică proprie: încarcă build-ul din `web/` (modul `app`, cu adresa API-ului din `web/.env.app`).
+Codul nativ (`app/src-tauri/src/lib.rs`) face doar ce browserul nu poate: păstrează refresh token-ul în stocarea sigură a
+sistemului (crate-ul `keyring`: Keychain pe macOS / iOS, Credential Manager pe Windows), primește deep-link-ul
+`achievementhub://auth/callback` (plugin-ul deep-link, plus single-instance pe desktop) și deschide login-ul Steam în
+browserul sistemului (plugin-ul opener: Steam nu permite login în ferestre încorporate). Toate diferențele site / aplicație
+sunt în `web/src/native.ts`, iar pachetele Tauri se încarcă dinamic, deci site-ul nu le descarcă. Windows se construiește
+pe GitHub Actions (nu se poate de pe Mac); iOS pe telefon cere semnare Apple (vezi `docs/build.md`).
+Logo-ul (trofeu cu coroana în spate, pe apus) e desenat ca SVG în `app/icon/logo.svg`; iconițele sunt generate cu `tauri icon`.

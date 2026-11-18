@@ -1,3 +1,4 @@
+import { isApp, secureStore } from './native';
 // Clientul HTTP pentru API și tipurile răspunsurilor.
 // În browser (dezvoltare) cererile merg relativ la /api, prin proxy-ul Vite.
 // În aplicația Tauri (etapa 3c) VITE_API_URL conține adresa serverului.
@@ -17,23 +18,23 @@ let accessToken: string | null = null;
 
 export type Session = { user: { id: number; role: Role; username: string }; access_token: string; refresh_token: string };
 
-export function saveSession(session: Pick<Session, 'access_token' | 'refresh_token'>) {
+export async function saveSession(session: Pick<Session, 'access_token' | 'refresh_token'>) {
   accessToken = session.access_token;
-  localStorage.setItem(REFRESH_KEY, session.refresh_token);
+  await secureStore.set(REFRESH_KEY, session.refresh_token);
 }
 
-export function clearSession() {
+export async function clearSession() {
   accessToken = null;
-  localStorage.removeItem(REFRESH_KEY);
+  await secureStore.delete(REFRESH_KEY);
 }
 
-export const storedRefreshToken = () => localStorage.getItem(REFRESH_KEY);
+export const storedRefreshToken = () => secureStore.get(REFRESH_KEY);
 
 // Mai multe cereri pot primi 401 în același timp; facem un singur refresh pentru toate.
 let refreshing: Promise<boolean> | null = null;
 export function refreshSession(): Promise<boolean> {
   refreshing ??= (async () => {
-    const refresh_token = storedRefreshToken();
+    const refresh_token = await storedRefreshToken();
     if (!refresh_token) return false;
     const response = await fetch(`${BASE_URL}/api/auth/refresh`, {
       method: 'POST',
@@ -41,10 +42,10 @@ export function refreshSession(): Promise<boolean> {
       body: JSON.stringify({ refresh_token }),
     });
     if (!response.ok) {
-      clearSession();
+      await clearSession();
       return false;
     }
-    saveSession(await response.json());
+    await saveSession(await response.json());
     return true;
   })().finally(() => {
     refreshing = null;
@@ -93,7 +94,8 @@ export async function download(path: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-export const steamLoginUrl = `${BASE_URL}/api/auth/steam?client=web`;
+// În aplicație, Steam trimite înapoi la deep-link-ul achievementhub://, nu la site.
+export const steamLoginUrl = `${BASE_URL}/api/auth/steam?client=${isApp ? 'app' : 'web'}`;
 
 // ---- Tipuri (oglindesc răspunsurile din api/src/routes) ----
 

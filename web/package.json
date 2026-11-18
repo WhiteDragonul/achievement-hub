@@ -6,12 +6,16 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:app": "tsc --noEmit && vite build --mode app"
   },
   "dependencies": {
     "@fontsource-variable/roboto": "^5.3.0",
     "@fontsource-variable/roboto-mono": "^5.3.0",
     "@tanstack/react-query": "^5.104.4",
+    "@tauri-apps/api": "^2.12.5",
+    "@tauri-apps/plugin-deep-link": "^2.6.3",
+    "@tauri-apps/plugin-opener": "^2.7.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router": "^7.18.4"
