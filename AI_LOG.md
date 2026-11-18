@@ -192,3 +192,11 @@ alunecă stânga-dreapta (`ScrollingText`). Sync-ul „Queued” era doar worker
 011 (avatarul fiecărui cont); alegerea avatarului în Edit profile (D56).
 **Verificat:** `tsc` (api, web); prin API: căutare PSN, legare, sync real (250 de jocuri, 6.368 de trofee), refuzul dublei
 legări, mesaje clare fără chei; în browser alegerea avatarului PSN. Xbox netestat cu date reale (lipsesc cheile Azure).
+
+## Xbox după gamertag (2026-11-18)
+**Prompt:** „pot sa iau la fel numele pe xbox si sa fie mai usor??”; „fa si xbox sa mearga”.
+**Rezultat:** Xbox se leagă ca PSN, după gamertag, cu avatar (D57); serverul folosește contul Xbox al autorului
+(`npm run xbox:token`, login pe microsoft.com/link), fără aplicație Azure. Rute comune `/auth/:platform/search|link`.
+Reparat: titlehub raportează uneori 0 achievement-uri la jocuri care au, deci filtrăm după tipul „Game”.
+**Verificat:** `tsc` (api, web); prin API: căutare, legare și sync real pe „Major Nelson” (250 de jocuri, 1.560 de
+achievement-uri), PSN în continuare funcțional prin rutele comune.

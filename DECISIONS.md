@@ -341,3 +341,10 @@ Fiecare cont de platformă are acum `avatar_url` (migrația 011, CHECK https), c
 sync prin metoda opțională `fetchAvatar` a providerului (Steam: persona, PSN: profilul după Online ID, Xbox: GameDisplayPicRaw).
 La editarea profilului userul alege unul dintre ele, un link propriu („Custom”) sau inițialele. Se salvează doar adresa
 aleasă în `users.avatar_url`, deci restul aplicației (clasamente, prieteni) nu se schimbă.
+
+**D57: Xbox se leagă după gamertag, ca PSN (înlocuiește login-ul Microsoft din D55).**
+Login-ul Microsoft cerea o aplicație înregistrată în Azure, iar contul personal al autorului nu are un director Azure.
+Acum serverul se autentifică o singură dată cu contul Xbox al autorului (clientul public al aplicației Xbox, fără secret;
+`npm run xbox:token` scrie `XBOX_REFRESH_TOKEN` în `.env`) și citește achievement-urile publice ale oricărui gamertag.
+PSN și Xbox folosesc aceleași rute (`/auth/:platform/search`, `/auth/:platform/link`) și aceeași căutare cu avatar în
+profil. Aceeași limită ca la PSN: nu se dovedește că gamertag-ul e al userului; profilul trebuie să fie public.

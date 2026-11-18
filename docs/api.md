@@ -50,7 +50,7 @@ Ierarhice: `admin` poate tot ce poate `moderator`, `moderator` tot ce poate `use
 |---|---|---|
 | Platforme, jocuri, achievement-uri (catalog) | oricine logat | admin |
 | Utilizatori | oricine logat (emailul altora doar pentru moderator+) | propriul profil; `is_banned` / `hidden_from_leaderboards`: moderator; `role`, creare: admin; ștergere: proprietarul sau admin |
-| Conturi de platformă, jocuri deținute, deblocări | oricine logat | proprietarul contului sau admin; contul Steam doar prin login Steam (`/auth/steam/link`), legarea manuală doar admin; PSN prin `/auth/psn/link` (Online ID), Xbox prin `/auth/xbox/link` (login Microsoft), Epic doar cu `ALLOW_MOCK_PLATFORMS=true` (D55) |
+| Conturi de platformă, jocuri deținute, deblocări | oricine logat | proprietarul contului sau admin; contul Steam doar prin login Steam (`/auth/steam/link`), legarea manuală doar admin; PSN și Xbox prin `/auth/:platform/search` + `/auth/:platform/link` (Online ID / gamertag, D57), Epic doar cu `ALLOW_MOCK_PLATFORMS=true` (D55) |
 | Sincronizări | oricine logat | creare: proprietarul contului; modificare / ștergere: admin (în rest le scrie worker-ul) |
 | Prietenii | doar cei doi (sau moderator) | cererea pleacă de la userul logat; acceptă doar destinatarul; oricare o poate șterge |
 | Raportări | moderator | creare: oricine (ca el însuși); rezolvare: moderator (`resolved_by` = moderatorul din token); ștergere: admin |

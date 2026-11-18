@@ -1,36 +1,50 @@
-// Provider real pentru Xbox (D55), prin API-ul oficial Xbox Live.
-// Legarea: userul se loghează cu contul Microsoft (OAuth, aplicație înregistrată în Azure: XBOX_CLIENT_ID / SECRET);
-// păstrăm criptat doar refresh token-ul Microsoft (platform_accounts.access_token_enc).
-// La fiecare sync: refresh token → token Microsoft → token Xbox Live (user) → token XSTS → cereri către Xbox Live.
-import { sql } from 'kysely';
+// Provider real pentru Xbox (D55, D57), prin serviciile Xbox Live. Funcționează ca la PSN: serverul se autentifică o
+// singură dată cu contul Xbox al autorului (XBOX_REFRESH_TOKEN în .env, obținut cu `npm run xbox:token`) și cu el citește
+// achievement-urile publice ale oricărui jucător. Un cont Xbox se leagă după gamertag; external_id = XUID-ul numeric.
+// Lanțul de autentificare: refresh token Microsoft → token Microsoft → token Xbox Live (user) → token XSTS.
 import { config } from '../config.js';
-import { db } from '../db/db.js';
 import { mapWithLimit } from './limit.js';
 import type { AchievementProvider, LinkedAccount, ProviderGame } from './providers.js';
 
-const MS_OAUTH = 'https://login.microsoftonline.com/consumers/oauth2/v2.0';
-const SCOPE = 'XboxLive.signin offline_access';
+const LIVE = 'https://login.live.com';
+// Client public Microsoft folosit de jocurile de consolă pentru login pe alt dispozitiv (fără secret, fără Azure).
+const CLIENT_ID = '00000000441cc96b';
+const SCOPE = 'service::user.auth.xboxlive.com::MBI_SSL';
 const MAX_GAMES = 250;
 const CONCURRENCY = 4;
 
-export const xboxRedirectUri = () => `${config.publicApiUrl}/api/auth/xbox/callback`;
-
-export function xboxAuthorizeUrl(state: string): string {
-  if (!config.xboxClientId) throw new Error('XBOX_CLIENT_ID is missing from the configuration');
-  return `${MS_OAUTH}/authorize?${new URLSearchParams({
-    client_id: config.xboxClientId, response_type: 'code', redirect_uri: xboxRedirectUri(), scope: SCOPE, state,
-  })}`;
+async function livePost<T>(path: string, fields: Record<string, string>): Promise<T> {
+  const response = await fetch(`${LIVE}/${path}`, { method: 'POST', body: new URLSearchParams({ client_id: CLIENT_ID, ...fields }) });
+  return response.json() as Promise<T>;
 }
 
-// Cod de autorizare (la legare) sau refresh token (la sync) → tokenuri Microsoft.
-async function microsoftToken(grant: { code: string } | { refresh_token: string }) {
-  const body = new URLSearchParams({
-    client_id: config.xboxClientId, client_secret: config.xboxClientSecret, scope: SCOPE, redirect_uri: xboxRedirectUri(),
-    ...('code' in grant ? { grant_type: 'authorization_code', code: grant.code } : { grant_type: 'refresh_token', refresh_token: grant.refresh_token }),
-  });
-  const response = await fetch(`${MS_OAUTH}/token`, { method: 'POST', body });
-  if (!response.ok) throw new Error('Microsoft sign-in expired: unlink Xbox and connect it again');
-  return response.json() as Promise<{ access_token: string; refresh_token: string }>;
+type LiveTokens = { access_token?: string; refresh_token?: string; error?: string };
+
+async function liveRefresh(token: string): Promise<{ access_token: string; refresh_token: string }> {
+  const tokens = await livePost<LiveTokens>('oauth20_token.srf', { grant_type: 'refresh_token', scope: SCOPE, refresh_token: token });
+  if (!tokens.access_token || !tokens.refresh_token) {
+    throw new Error('The Xbox sign-in of the server expired: run `npm run xbox:token` again');
+  }
+  return { access_token: tokens.access_token, refresh_token: tokens.refresh_token };
+}
+
+// Login pe alt dispozitiv (folosit de cli/xbox-token.ts): Microsoft dă un cod scurt pe care autorul îl introduce pe
+// https://www.microsoft.com/link; apoi întrebăm periodic dacă s-a logat și primim refresh token-ul.
+export async function xboxDeviceLogin(show: (url: string, code: string) => void): Promise<string> {
+  const device = await livePost<{ user_code: string; device_code: string; verification_uri: string; interval: number; expires_in: number }>(
+    'oauth20_connect.srf', { scope: SCOPE, response_type: 'device_code' },
+  );
+  show(device.verification_uri, device.user_code);
+  const deadline = Date.now() + device.expires_in * 1000;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, device.interval * 1000));
+    const tokens = await livePost<LiveTokens>('oauth20_token.srf', {
+      grant_type: 'urn:ietf:params:oauth:grant-type:device_code', device_code: device.device_code,
+    });
+    if (tokens.refresh_token) return tokens.refresh_token;
+    if (tokens.error !== 'authorization_pending') throw new Error(`Microsoft sign-in failed: ${tokens.error}`);
+  }
+  throw new Error('The code expired before sign-in. Run the command again.');
 }
 
 async function xblPost<T>(url: string, body: object): Promise<T> {
@@ -39,44 +53,64 @@ async function xblPost<T>(url: string, body: object): Promise<T> {
     headers: { 'content-type': 'application/json', 'x-xbl-contract-version': '1' },
     body: JSON.stringify(body),
   });
-  // 401 la XSTS = contul Microsoft nu are profil Xbox (n-a intrat niciodată pe Xbox).
-  if (!response.ok) throw new Error(`This Microsoft account has no Xbox profile (HTTP ${response.status})`);
+  if (!response.ok) throw new Error(`Xbox Live sign-in failed (HTTP ${response.status})`);
   return response.json() as Promise<T>;
 }
 
-type XboxSession = { authorization: string; xuid: string; gamertag: string };
+// Tokenul XSTS e valabil câteva ore; îl păstrăm în memorie. Microsoft dă la fiecare reînnoire un refresh token nou,
+// pe care îl folosim data viitoare (cel din .env rămâne valabil ca punct de pornire după o repornire a serverului).
+let refreshToken = '';
+let cached: { authorization: string; expiresAt: number } | null = null;
 
-// Token Microsoft → token Xbox Live → token XSTS; antetul Authorization pentru toate cererile Xbox Live.
-async function xboxSession(msAccessToken: string): Promise<XboxSession> {
+async function xboxAuthorization(): Promise<string> {
+  if (!config.xboxRefreshToken) throw new Error('XBOX_REFRESH_TOKEN is missing from the configuration');
+  if (cached && cached.expiresAt > Date.now()) return cached.authorization;
+
+  const tokens = await liveRefresh(refreshToken || config.xboxRefreshToken);
+  refreshToken = tokens.refresh_token;
   const user = await xblPost<{ Token: string }>('https://user.auth.xboxlive.com/user/authenticate', {
     RelyingParty: 'http://auth.xboxlive.com', TokenType: 'JWT',
-    Properties: { AuthMethod: 'RPS', SiteName: 'user.auth.xboxlive.com', RpsTicket: `d=${msAccessToken}` },
+    Properties: { AuthMethod: 'RPS', SiteName: 'user.auth.xboxlive.com', RpsTicket: `t=${tokens.access_token}` },
   });
-  type Xsts = { Token: string; DisplayClaims: { xui: { uhs: string; xid: string; gtg: string }[] } };
-  const xsts = await xblPost<Xsts>('https://xsts.auth.xboxlive.com/xsts/authorize', {
-    RelyingParty: 'http://xboxlive.com', TokenType: 'JWT', Properties: { SandboxId: 'RETAIL', UserTokens: [user.Token] },
-  });
-  const claims = xsts.DisplayClaims.xui[0];
-  return { authorization: `XBL3.0 x=${claims.uhs};${xsts.Token}`, xuid: claims.xid, gamertag: claims.gtg };
+  const xsts = await xblPost<{ Token: string; NotAfter: string; DisplayClaims: { xui: { uhs: string }[] } }>(
+    'https://xsts.auth.xboxlive.com/xsts/authorize',
+    { RelyingParty: 'http://xboxlive.com', TokenType: 'JWT', Properties: { SandboxId: 'RETAIL', UserTokens: [user.Token] } },
+  );
+  const authorization = `XBL3.0 x=${xsts.DisplayClaims.xui[0].uhs};${xsts.Token}`;
+  cached = { authorization, expiresAt: new Date(xsts.NotAfter).getTime() - 5 * 60_000 };
+  return authorization;
 }
 
-// Folosită la legare: din codul primit de la Microsoft obținem identitatea Xbox și refresh token-ul de păstrat.
-export async function linkXboxAccount(code: string) {
-  const tokens = await microsoftToken({ code });
-  const session = await xboxSession(tokens.access_token);
-  return { xuid: session.xuid, gamertag: session.gamertag, refreshToken: tokens.refresh_token };
-}
-
-async function xblGet<T>(url: string, authorization: string): Promise<T> {
+async function xblGet<T>(url: string): Promise<T | null> {
   const response = await fetch(url, {
-    headers: { authorization, 'x-xbl-contract-version': '2', 'accept-language': 'en-US' },
+    headers: { authorization: await xboxAuthorization(), 'x-xbl-contract-version': '2', 'accept-language': 'en-US' },
   });
+  if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Xbox Live ${new URL(url).host}: HTTP ${response.status}`);
   return response.json() as Promise<T>;
 }
 
+type ProfileSettings = { profileUsers: { id: string; settings: { id: string; value: string }[] }[] };
+
+// Profilul după `gt(<gamertag>)` sau `xuid(<xuid>)`: XUID, gamertag și avatar (pe https, ca să nu fie blocat).
+async function xboxProfile(user: string): Promise<{ xuid: string; gamertag: string; avatarUrl: string | null } | null> {
+  const data = await xblGet<ProfileSettings>(
+    `https://profile.xboxlive.com/users/${user}/profile/settings?settings=Gamertag,GameDisplayPicRaw`,
+  );
+  const profile = data?.profileUsers[0];
+  if (!profile) return null;
+  const setting = (id: string) => profile.settings.find((s) => s.id === id)?.value ?? null;
+  return { xuid: profile.id, gamertag: setting('Gamertag') ?? '', avatarUrl: setting('GameDisplayPicRaw')?.replace(/^http:/, 'https:') ?? null };
+}
+
+// Gamertag → { accountId (XUID), name, avatarUrl } sau null dacă nu există (căutarea din profil și legarea).
+export async function findXboxAccount(gamertag: string) {
+  const profile = await xboxProfile(`gt(${encodeURIComponent(gamertag)})`);
+  return profile ? { accountId: profile.xuid, name: profile.gamertag, avatarUrl: profile.avatarUrl } : null;
+}
+
 type TitleHistory = {
-  titles: { titleId: string; name: string; displayImage?: string; achievement?: { totalAchievements: number }; titleHistory?: { lastTimePlayed?: string } }[];
+  titles: { titleId: string; name: string; type: string; displayImage?: string; titleHistory?: { lastTimePlayed?: string } }[];
 };
 type Achievements = {
   achievements: {
@@ -86,50 +120,31 @@ type Achievements = {
 };
 
 export class XboxProvider implements AchievementProvider {
-  // Sesiunea Xbox Live din fetchLibrary, refolosită de fetchAvatar (un provider nou se creează la fiecare sync).
-  private session: XboxSession | null = null;
-
-  async fetchAvatar(): Promise<string | null> {
-    if (!this.session) return null;
-    type Settings = { profileUsers: { settings: { id: string; value: string }[] }[] };
-    const data = await xblGet<Settings>(
-      `https://profile.xboxlive.com/users/xuid(${this.session.xuid})/profile/settings?settings=GameDisplayPicRaw`,
-      this.session.authorization,
-    );
-    const url = data.profileUsers[0]?.settings.find((s) => s.id === 'GameDisplayPicRaw')?.value ?? null;
-    return url?.replace(/^http:/, 'https:') ?? null;
+  async fetchAvatar(account: LinkedAccount): Promise<string | null> {
+    return (await xboxProfile(`xuid(${account.external_id})`))?.avatarUrl ?? null;
   }
 
   async fetchLibrary(account: LinkedAccount): Promise<ProviderGame[]> {
-    if (!account.access_token) throw new Error('Xbox sign-in missing: unlink Xbox and connect it again');
-    const tokens = await microsoftToken({ refresh_token: account.access_token });
-    // Microsoft dă un refresh token nou la fiecare folosire; îl salvăm (criptat) pentru sync-ul următor.
-    await db.updateTable('platform_accounts')
-      .set({ access_token_enc: sql<Buffer>`pgp_sym_encrypt(${tokens.refresh_token}, ${config.tokenEncryptionKey})` })
-      .where('id', '=', account.id)
-      .execute();
-    this.session = await xboxSession(tokens.access_token);
-    const { authorization, xuid } = this.session;
-
+    const xuid = account.external_id;
     const history = await xblGet<TitleHistory>(
       `https://titlehub.xboxlive.com/users/xuid(${xuid})/titles/titlehistory/decoration/achievement,image?maxItems=${MAX_GAMES}`,
-      authorization,
     );
-    // Doar jocurile cu achievement-uri (titlehub întoarce și aplicații: Netflix, YouTube etc.).
-    const games = history.titles.filter((title) => (title.achievement?.totalAchievements ?? 0) > 0);
+    if (!history) throw new Error('Xbox is hiding your games: set "Game and app history" to Everybody in Xbox privacy settings');
+    // Doar jocurile (titlehub întoarce și aplicații: Netflix, YouTube etc.). Nu filtrăm după totalAchievements:
+    // la unele jocuri (ex. Battlefield 6) titlehub raportează 0, deși jocul are achievement-uri.
+    const games = history.titles.filter((title) => title.type === 'Game');
 
     return mapWithLimit(games, CONCURRENCY, async (title): Promise<ProviderGame> => {
       const data = await xblGet<Achievements>(
         `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements?titleId=${title.titleId}&maxItems=1000`,
-        authorization,
       );
       return {
         external_id: title.titleId,
         title: title.name,
-        icon_url: title.displayImage ?? null,
+        icon_url: title.displayImage?.replace(/^http:/, 'https:') ?? null,
         playtime_minutes: 0, // Xbox Live nu dă timpul de joc în aceste API-uri
         last_played_at: title.titleHistory?.lastTimePlayed ? new Date(title.titleHistory.lastTimePlayed) : null,
-        achievements: data.achievements.map((a) => ({
+        achievements: (data?.achievements ?? []).map((a) => ({
           external_id: a.id,
           name: a.name,
           description: a.description || a.lockedDescription || null,

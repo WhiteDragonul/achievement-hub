@@ -605,7 +605,7 @@ function AccountRow({ account, editable, onChange }: { account: ProfileAccount; 
 }
 
 // Platformele încă nelegate. Steam: login Steam (dovedește că SteamID-ul e al tău), apoi primul sync pornește singur.
-// PSN: după Online ID. Xbox: login cu contul Microsoft (ca la Steam, în browser). Ambele cu date reale (D55).
+// PSN și Xbox: căutare după Online ID / gamertag, cu date reale (D55, D57).
 // Epic: fără API public, deci se leagă cu date demo (MockProvider) când ALLOW_MOCK_PLATFORMS=true (D54), altfel „în curând”.
 function ConnectPlatforms({ userId, linked, onLinked }: { userId: number; linked: ProfileAccount[]; onLinked: () => void }) {
   const platforms = useQuery({ queryKey: ['platforms'], queryFn: () => api<Platform[]>('/platforms') });
@@ -613,10 +613,6 @@ function ConnectPlatforms({ userId, linked, onLinked }: { userId: number; linked
 
   const connectSteam = useMutation({
     mutationFn: () => api<{ url: string }>('/auth/steam/link', { method: 'POST', body: { client: isApp ? 'app' : 'web' } }),
-    onSuccess: ({ url }) => openExternal(url),
-  });
-  const connectXbox = useMutation({
-    mutationFn: () => api<{ url: string }>('/auth/xbox/link', { method: 'POST', body: { client: isApp ? 'app' : 'web' } }),
     onSuccess: ({ url }) => openExternal(url),
   });
 
@@ -639,20 +635,9 @@ function ConnectPlatforms({ userId, linked, onLinked }: { userId: number; linked
               <Icon name="link" className="h-4 w-4" /> Connect Steam
             </Button>
           </li>
-        ) : platform.code === 'xbox' ? (
-          <li key={platform.id} className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-line px-5 py-4">
-            <PlatformBadge code="xbox" full />
-            <p className="min-w-0 flex-1 basis-64 text-[13px] leading-relaxed text-muted">
-              You sign in with your Microsoft account; we only keep an encrypted access token, never your password.
-            </p>
-            <Button size="sm" onClick={() => connectXbox.mutate()} disabled={connectXbox.isPending}>
-              <Icon name="link" className="h-4 w-4" /> Connect Xbox
-            </Button>
-            {connectXbox.error && <div className="basis-full"><ErrorMessage error={connectXbox.error} /></div>}
-          </li>
-        ) : platform.code === 'psn' ? (
+        ) : platform.code === 'psn' || platform.code === 'xbox' ? (
           <li key={platform.id} className="border-t border-line px-5 py-4">
-            <PsnLinkForm onLinked={onLinked} />
+            <ConsoleLinkForm platform={platform.code} onLinked={onLinked} />
           </li>
         ) : platform.linkable ? (
           <li key={platform.id} className="border-t border-line px-5 py-4">
@@ -672,11 +657,17 @@ function ConnectPlatforms({ userId, linked, onLinked }: { userId: number; linked
 }
 
 // Doar cu ALLOW_MOCK_PLATFORMS=true (demo): legare manuală pe o platformă cu date generate.
-// PSN: Sony nu are login pentru aplicații terțe, deci contul se caută după Online ID. Pe măsură ce userul scrie,
-// arătăm contul găsit (avatar + nume); un click pe „Connect” îl leagă și pornește primul sync.
-type PsnMatch = { online_id: string; avatar_url: string | null; already_linked: boolean };
+// PSN / Xbox: Sony și Microsoft nu au login simplu pentru aplicații terțe, deci contul se caută după nume. Pe măsură ce
+// userul scrie, arătăm contul găsit (avatar + nume); un click pe „Connect” îl leagă și pornește primul sync.
+type ConsoleMatch = { name: string; avatar_url: string | null; already_linked: boolean };
 
-function PsnLinkForm({ onLinked }: { onLinked: () => void }) {
+const consoleText = {
+  psn: { label: 'PlayStation', field: 'PSN Online ID', privacy: 'Trophies', network: 'PlayStation Network' },
+  xbox: { label: 'Xbox', field: 'Xbox gamertag', privacy: 'Game and app history and Achievements', network: 'Xbox Live' },
+};
+
+function ConsoleLinkForm({ platform, onLinked }: { platform: 'psn' | 'xbox'; onLinked: () => void }) {
+  const labels = consoleText[platform];
   const [text, setText] = useState('');
   const [query, setQuery] = useState('');
   // Căutăm abia după o pauză de 400 ms în scris, nu la fiecare literă.
@@ -685,15 +676,15 @@ function PsnLinkForm({ onLinked }: { onLinked: () => void }) {
     return () => clearTimeout(timer);
   }, [text]);
 
-  const valid = /^[A-Za-z0-9_-]{3,16}$/.test(query);
+  const valid = /^[A-Za-z0-9_ -]+(#[0-9]{1,4})?$/.test(query) && query.length <= 20;
   const search = useQuery({
-    queryKey: ['psn-search', query],
-    queryFn: () => api<PsnMatch>(`/auth/psn/search?${new URLSearchParams({ online_id: query })}`),
+    queryKey: ['console-search', platform, query],
+    queryFn: () => api<ConsoleMatch>(`/auth/${platform}/search?${new URLSearchParams({ name: query })}`),
     enabled: valid,
     retry: false,
   });
   const link = useMutation({
-    mutationFn: (online_id: string) => api('/auth/psn/link', { method: 'POST', body: { online_id } }),
+    mutationFn: (name: string) => api(`/auth/${platform}/link`, { method: 'POST', body: { name } }),
     onSuccess: onLinked,
   });
   const match = valid && query === text.trim() ? search.data : undefined;
@@ -701,35 +692,35 @@ function PsnLinkForm({ onLinked }: { onLinked: () => void }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
-        <PlatformBadge code="psn" full />
+        <PlatformBadge code={platform} full />
         <Input
           value={text}
           onChange={(event) => setText(event.target.value)}
-          aria-label="PlayStation Online ID"
-          placeholder="Search your PSN Online ID"
+          aria-label={labels.field}
+          placeholder={`Search your ${labels.field}`}
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
           className="min-w-40 flex-1"
         />
       </div>
-      {valid && search.isFetching && <p className="text-[13px] text-muted">Searching PlayStation…</p>}
+      {valid && search.isFetching && <p className="text-[13px] text-muted">Searching {labels.label}…</p>}
       {valid && search.error && !search.isFetching && <ErrorMessage error={search.error} />}
       {match && !search.isFetching && (
         <div className="rise flex items-center gap-3 rounded-[20px] border border-line bg-raised p-2.5 pl-3">
-          <Avatar name={match.online_id} url={match.avatar_url} size={44} />
+          <Avatar name={match.name} url={match.avatar_url} size={44} />
           <div className="min-w-0 flex-1">
-            <p className="truncate font-bold">{match.online_id}</p>
-            <p className="text-[12px] text-muted">{match.already_linked ? 'Already linked to a user' : 'PlayStation Network'}</p>
+            <p className="truncate font-bold">{match.name}</p>
+            <p className="text-[12px] text-muted">{match.already_linked ? 'Already linked to a user' : labels.network}</p>
           </div>
-          <Button size="sm" onClick={() => link.mutate(match.online_id)} disabled={link.isPending || match.already_linked}>
+          <Button size="sm" onClick={() => link.mutate(match.name)} disabled={link.isPending || match.already_linked}>
             <Icon name="link" className="h-4 w-4" /> {link.isPending ? 'Connecting…' : 'Connect'}
           </Button>
         </div>
       )}
       <ErrorMessage error={link.error} />
       <p className="text-[13px] text-muted">
-        Trophies must be visible to <span className="text-fg">Anyone</span> in your PSN privacy settings.
+        {labels.privacy} must be visible to <span className="text-fg">{platform === 'psn' ? 'Anyone' : 'Everybody'}</span> in your {labels.label} privacy settings.
       </p>
     </div>
   );

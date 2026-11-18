@@ -22,9 +22,7 @@ services:
         sync: false
       - key: PSN_NPSSO
         sync: false
-      - key: XBOX_CLIENT_ID
-        sync: false
-      - key: XBOX_CLIENT_SECRET
+      - key: XBOX_REFRESH_TOKEN
         sync: false
       - key: RUN_WORKER_IN_API
         value: "true"

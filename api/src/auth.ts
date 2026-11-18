@@ -62,14 +62,6 @@ export function verifyAccessToken(token: string): AuthUser | null {
 // așa că userul e transmis printr-un token „state” semnat, valabil 10 minute și bun doar pentru acest scop.
 export const signSteamLinkState = (userId: number) => signJwt({ sub: userId, purpose: 'steam-link' }, 10 * 60);
 
-// La fel pentru Xbox; `client` (web / app) spune unde revine userul după login-ul Microsoft.
-export const signXboxLinkState = (userId: number, client: string) => signJwt({ sub: userId, client, purpose: 'xbox-link' }, 10 * 60);
-
-export function verifyXboxLinkState(token: string): { userId: number; client: string } | null {
-  const claims = verifyJwt(token);
-  return claims?.purpose === 'xbox-link' ? { userId: claims.sub as number, client: claims.client as string } : null;
-}
-
 export function verifySteamLinkState(token: string): number | null {
   const claims = verifyJwt(token);
   return claims?.purpose === 'steam-link' ? (claims.sub as number) : null;

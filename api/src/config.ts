@@ -21,9 +21,8 @@ export const config = {
   steamApiKey: process.env.STEAM_API_KEY ?? '',
   // PSN (D55): tokenul NPSSO al autorului, din https://ca.account.sony.com/api/v1/ssocookie (după login pe playstation.com).
   psnNpsso: process.env.PSN_NPSSO ?? '',
-  // Xbox (D55): aplicația înregistrată în Azure Portal (login cu cont Microsoft personal).
-  xboxClientId: process.env.XBOX_CLIENT_ID ?? '',
-  xboxClientSecret: process.env.XBOX_CLIENT_SECRET ?? '',
+  // Xbox (D57): refresh token-ul contului Xbox al autorului, obținut o dată cu `npm run xbox:token`.
+  xboxRefreshToken: process.env.XBOX_REFRESH_TOKEN ?? '',
   // Fixtures (mii de useri generați) doar la cerere: implicit baza conține doar date reale (D45).
   seedOnStart: process.env.SEED_ON_START === 'true',
   // Epic nu are provider real (D54, D55); cu true se poate lega cu date demo.

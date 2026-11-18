@@ -16,11 +16,11 @@ import { fetchSteamPersona } from '../sync/steam-provider.js';
 const STEAM_OPENID = 'https://steamcommunity.com/openid/login';
 
 // Doar aceste destinații sunt permise după login (fără „open redirect” către un site oarecare).
-export const clientTargets = {
+const clientTargets = {
   web: () => `${config.webUrl}/auth/callback`,
   app: () => 'achievementhub://auth/callback', // deep-link-ul aplicației Tauri
 };
-export type Client = keyof typeof clientTargets;
+type Client = keyof typeof clientTargets;
 
 type CallbackQuery = Record<string, string> & { client?: Client; link?: string };
 
