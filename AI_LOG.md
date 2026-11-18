@@ -176,3 +176,19 @@ Reparat în trecere: culoarea pusă pe `<html>` acoperea scena din fundal; acum 
 **Rezultat:** logo-ul nou în `web/src/assets/logo.png`, favicon, apple-touch-icon și iconițele Tauri regenerate; pagina
 `/settings` cu tema Leonida (D53); pe pagina de login logo-ul e centrat și mai mare (64px).
 **Verificat:** `tsc`; în browser (desktop + mobil) pagina de login și Settings.
+
+## Aplicațiile Mac / iOS: Steam, nume în sidebar (2026-11-18)
+**Prompt:** „nu merge butonul de continue with steam pe mac”; „sta la infinit si nu se incarca”; „pe macbook fa ca numele sa se vada”.
+**Rezultat:** `openExternal` trimite browserului o adresă completă (și pe iOS, unde pagina e `tauri://localhost`);
+ascultătorul de deep-link se înregistrează o singură dată (bucla care făcea ecranul să pâlpâie); numele lung din sidebar
+alunecă stânga-dreapta (`ScrollingText`). Sync-ul „Queued” era doar worker-ul oprit.
+**Verificat:** aplicația Mac (release) și simulatorul iPhone, login Steam până la profil.
+
+## PSN și Xbox reale, avatar ales din platforme (2026-11-18)
+**Prompt:** „fa conectarea cu psn xbox si epic games sa mearga”; „da, fa psn si xbox”; „fa cautarea cu avatar la psn”;
+„vreau sa poti sa alegi ce avatar vrei … de pe steam, psn, xbox sau custom”.
+**Rezultat:** `PsnProvider` (biblioteca psn-api, NPSSO-ul autorului) cu legare după Online ID și căutare cu avatar;
+`XboxProvider` cu login Microsoft (OAuth + Xbox Live); Epic rămâne demo (D54, D55). Migrațiile 010 (PSN/Xbox reale) și
+011 (avatarul fiecărui cont); alegerea avatarului în Edit profile (D56).
+**Verificat:** `tsc` (api, web); prin API: căutare PSN, legare, sync real (250 de jocuri, 6.368 de trofee), refuzul dublei
+legări, mesaje clare fără chei; în browser alegerea avatarului PSN. Xbox netestat cu date reale (lipsesc cheile Azure).

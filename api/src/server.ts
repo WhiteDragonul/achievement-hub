@@ -7,6 +7,7 @@ import { authenticate, requireRole } from './auth.js';
 import { errorHandler } from './errors.js';
 import { authRoutes, meRoutes } from './routes/auth.js';
 import { steamAuthRoutes, steamLinkRoutes } from './routes/steam-auth.js';
+import { consoleLinkRoutes, xboxCallbackRoutes } from './routes/console-link.js';
 import { achievementsRoutes } from './routes/achievements.js';
 import { exportsRoutes } from './routes/exports.js';
 import { friendshipsRoutes } from './routes/friendships.js';
@@ -41,6 +42,7 @@ export function buildServer({ logger = true } = {}) {
     // Rute publice: login (email sau Steam), înregistrare, refresh, logout.
     await root.register(authRoutes);
     await root.register(steamAuthRoutes);
+    await root.register(xboxCallbackRoutes);
 
     // Tot restul cere token de acces. Hook-ul adăugat în acest context (encapsulare Fastify) se aplică
     // doar rutelor înregistrate aici, nu și celor publice de mai sus.
@@ -49,6 +51,7 @@ export function buildServer({ logger = true } = {}) {
       api.addHook('onRequest', authenticate);
       await api.register(meRoutes);
       await api.register(steamLinkRoutes);
+      await api.register(consoleLinkRoutes);
       await api.register(usersRoutes);
       await api.register(platformsRoutes);
       await api.register(platformAccountsRoutes);

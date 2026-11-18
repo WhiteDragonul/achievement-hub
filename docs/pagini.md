@@ -119,8 +119,9 @@ Pe telefon, butoanele fiecărui achievement trec sub text:
 - **Editează profilul** (Update pe `users` + înlocuirea vitrinei în `profile_showcase`, într-o tranzacție):
   nume afișat, avatar (link https), bio, accent, banner, joc preferat (din bibliotecă), vitrina (din achievement-urile deblocate);
 - **Conectează Steam** (Create pe `platform_accounts` prin login Steam, D47): SteamID-ul vine confirmat de Steam,
-  deci nimeni nu poate lega contul altcuiva; prima sincronizare pornește automat. PSN / Xbox / Epic apar „În curând”
-  (n-au integrare reală; cu `ALLOW_MOCK_PLATFORMS=true` se pot lega cu date demo);
+  deci nimeni nu poate lega contul altcuiva; prima sincronizare pornește automat. **Conectează Xbox**: login cu
+  contul Microsoft, la fel de sigur; **Conectează PSN**: după Online ID (trofeele trebuie să fie publice). Epic apare
+  „În curând” (fără API public; cu `ALLOW_MOCK_PLATFORMS=true` se leagă cu date demo) (D55);
 - **Dezleagă** (Delete): progresul contului dispare prin ON DELETE CASCADE;
 - **Sincronizează** (Create pe `sync_runs`, status `queued`) și **Istoric** (ultimele 5 sincronizări). Execuția
   e făcută de worker (pg-boss); pagina arată live „în coadă / se sincronizează” și motivul unui eșec.

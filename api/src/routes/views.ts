@@ -93,10 +93,10 @@ export async function viewsRoutes(app: FastifyInstance) {
 
     const accounts = await sql<{
       id: number; platform_id: number; platform_code: string; platform_name: string; external_id: string;
-      display_name: string; linked_at: Date; last_synced_at: Date | null; games: number; achievements: number;
+      display_name: string; avatar_url: string | null; linked_at: Date; last_synced_at: Date | null; games: number; achievements: number;
     }>`
       SELECT pa.id, pa.platform_id, p.code AS platform_code, p.name AS platform_name,
-             pa.external_id, pa.display_name, pa.linked_at, pa.last_synced_at,
+             pa.external_id, pa.display_name, pa.avatar_url, pa.linked_at, pa.last_synced_at,
              (SELECT count(*) FROM user_games ug WHERE ug.platform_account_id = pa.id) AS games,
              (SELECT count(*) FROM user_achievements ua WHERE ua.platform_account_id = pa.id) AS achievements
       FROM platform_accounts pa

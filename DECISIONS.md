@@ -317,3 +317,27 @@ română, pentru susținerea proiectului. Excepție: erorile pentru programator 
 din ea se generează favicon-ul, iconița web și iconițele aplicațiilor (`tauri icon`; colțuri rotunjite pe desktop, pătrat pe iOS,
 unde sistemul rotunjește singur). Tema e o preferință locală (`localStorage`), nu un câmp în baza de date: nu ține de cont și
 nu trebuie sincronizată. O singură temă acum; lista din `theme.ts` permite adăugarea altora.
+
+**D54: PSN / Xbox / Epic se pot lega din nou, cu date demo (revine parțial asupra D45).**
+Platformele n-au API public pentru achievement-uri (Epic deloc, Xbox și PSN doar cu înregistrare de dezvoltator / API
+neoficial), dar aplicația trebuie prezentată cu toate cele 4 platforme. `ALLOW_MOCK_PLATFORMS=true` (în `.env` și `render.yaml`)
+le activează prin `MockProvider`; butonul spune „Link (demo)”, deci utilizatorul știe că datele sunt generate. După legare
+pornește singur primul sync, ca la Steam. Un provider real se adaugă ulterior fără schimbări în UI sau în schemă.
+
+**D55: PSN și Xbox cu date reale; Epic rămâne demo.**
+- Xbox: API-ul oficial Xbox Live. Userul se loghează cu contul Microsoft (OAuth, aplicație Azure: `XBOX_CLIENT_ID` /
+  `XBOX_CLIENT_SECRET`, redirect `<PUBLIC_API_URL>/api/auth/xbox/callback`), deci dovedește că e contul lui, ca la Steam.
+  Se păstrează criptat (pgcrypto, D7) doar refresh token-ul Microsoft, reînnoit la fiecare sync.
+- PSN: Sony nu are API public și nici login pentru aplicații terțe. Biblioteca `psn-api` folosește serviciile aplicației
+  PlayStation cu tokenul NPSSO al autorului (`PSN_NPSSO`); contul se leagă după Online ID și trebuie să aibă trofeele
+  publice. Limită asumată: nu se poate dovedi că Online ID-ul e al userului; UNIQUE (platform_id, external_id) împiedică
+  legarea aceluiași cont la doi useri. Tokenul NPSSO expiră după ~2 luni și trebuie reînnoit.
+- Migrația 010 marchează `psn` și `xbox` ca `is_mock = false`; `getProvider` alege `PsnProvider` / `XboxProvider`.
+- Epic: niciun API public pentru achievement-uri (Epic Online Services e doar pentru propriul joc al dezvoltatorului),
+  deci rămâne pe `MockProvider` (D54).
+
+**D56: Avatarul profilului se alege dintre conturile legate sau e propriu.**
+Fiecare cont de platformă are acum `avatar_url` (migrația 011, CHECK https), completat la legare și actualizat la fiecare
+sync prin metoda opțională `fetchAvatar` a providerului (Steam: persona, PSN: profilul după Online ID, Xbox: GameDisplayPicRaw).
+La editarea profilului userul alege unul dintre ele, un link propriu („Custom”) sau inițialele. Se salvează doar adresa
+aleasă în `users.avatar_url`, deci restul aplicației (clasamente, prieteni) nu se schimbă.

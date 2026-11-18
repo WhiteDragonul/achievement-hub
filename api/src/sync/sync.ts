@@ -10,7 +10,7 @@ export async function runSync(syncRunId: number): Promise<void> {
     .innerJoin('platform_accounts as pa', 'pa.id', 'sync_runs.platform_account_id')
     .innerJoin('platforms', 'platforms.id', 'pa.platform_id')
     .select([
-      'sync_runs.id', 'pa.id as account_id', 'pa.platform_id', 'pa.external_id', 'platforms.code', 'platforms.is_mock',
+      'sync_runs.id', 'pa.id as account_id', 'pa.platform_id', 'pa.external_id', 'pa.display_name', 'platforms.code', 'platforms.is_mock',
       // Tokenul se decriptează în Postgres, cu cheia trimisă ca parametru (D7).
       sql<string | null>`pgp_sym_decrypt(pa.access_token_enc, ${config.tokenEncryptionKey})`.as('access_token'),
     ])
@@ -21,9 +21,11 @@ export async function runSync(syncRunId: number): Promise<void> {
   await db.updateTable('sync_runs').set({ status: 'running', started_at: new Date() }).where('id', '=', run.id).execute();
 
   try {
-    const library = await getProvider(run.code, run.is_mock).fetchLibrary({
-      platform_id: run.platform_id, external_id: run.external_id, access_token: run.access_token,
-    });
+    const provider = getProvider(run.code, run.is_mock);
+    const account = { id: run.account_id, platform_id: run.platform_id, external_id: run.external_id, display_name: run.display_name, access_token: run.access_token };
+    const library = await provider.fetchLibrary(account);
+    // Un avatar care nu se poate citi nu strică sync-ul: rămâne cel vechi.
+    const avatarUrl = await provider.fetchAvatar?.(account).catch(() => null) ?? null;
 
     let newUnlocks = 0;
     // O singură tranzacție: dacă scrierea pică la jumătate, progresul rămâne cel de dinainte de sync.
@@ -80,7 +82,8 @@ export async function runSync(syncRunId: number): Promise<void> {
           newUnlocks += inserted.length;
         }
       }
-      await trx.updateTable('platform_accounts').set({ last_synced_at: new Date() }).where('id', '=', run.account_id).execute();
+      await trx.updateTable('platform_accounts')
+        .set({ last_synced_at: new Date(), ...(avatarUrl ? { avatar_url: avatarUrl } : {}) }).where('id', '=', run.account_id).execute();
     });
 
     await db.updateTable('sync_runs')

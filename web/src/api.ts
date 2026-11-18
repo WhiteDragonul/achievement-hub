@@ -158,6 +158,7 @@ export type ProfileAccount = {
   platform_name: string;
   external_id: string;
   display_name: string;
+  avatar_url: string | null; // avatarul de pe platformă (opțiune pentru avatarul profilului)
   linked_at: string;
   last_synced_at: string | null;
   games: number;

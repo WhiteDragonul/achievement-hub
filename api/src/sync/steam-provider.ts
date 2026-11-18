@@ -2,6 +2,7 @@
 // Pentru fiecare joc deținut: schema achievement-urilor (nume, descriere, icon), ce a deblocat userul și procentul global.
 // Profilul Steam trebuie să aibă „Game details” public, altfel Steam răspunde 403 la achievement-uri.
 import { config } from '../config.js';
+import { mapWithLimit } from './limit.js';
 import type { AchievementProvider, LinkedAccount, ProviderGame } from './providers.js';
 
 const API = 'https://api.steampowered.com';
@@ -10,20 +11,6 @@ const API = 'https://api.steampowered.com';
 const MAX_GAMES = 250;
 // Câte jocuri se interoghează în paralel: destul de rapid, dar fără să lovim limitele Steam.
 const CONCURRENCY = 6;
-
-// Aplică `fn` pe toate elementele, cu cel mult `limit` apeluri în desfășurare simultan; păstrează ordinea.
-async function mapWithLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let next = 0;
-  const worker = async () => {
-    while (next < items.length) {
-      const index = next++;
-      results[index] = await fn(items[index]);
-    }
-  };
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
-  return results;
-}
 
 async function steamGet<T>(path: string, params: Record<string, string>): Promise<T | null> {
   const url = new URL(API + path);
@@ -45,6 +32,10 @@ type PlayerAchievements = { playerstats?: { achievements?: { apiname: string; ac
 type GlobalPercentages = { achievementpercentages?: { achievements?: { name: string; percent: number | string }[] } };
 
 export class SteamProvider implements AchievementProvider {
+  async fetchAvatar(account: LinkedAccount): Promise<string | null> {
+    return (await fetchSteamPersona(account.external_id))?.avatar ?? null;
+  }
+
   async fetchLibrary(account: LinkedAccount): Promise<ProviderGame[]> {
     if (!config.steamApiKey) throw new Error('STEAM_API_KEY is missing from the configuration');
     const key = config.steamApiKey;

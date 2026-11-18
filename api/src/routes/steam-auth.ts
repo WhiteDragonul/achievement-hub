@@ -16,11 +16,11 @@ import { fetchSteamPersona } from '../sync/steam-provider.js';
 const STEAM_OPENID = 'https://steamcommunity.com/openid/login';
 
 // Doar aceste destinații sunt permise după login (fără „open redirect” către un site oarecare).
-const clientTargets = {
+export const clientTargets = {
   web: () => `${config.webUrl}/auth/callback`,
   app: () => 'achievementhub://auth/callback', // deep-link-ul aplicației Tauri
 };
-type Client = keyof typeof clientTargets;
+export type Client = keyof typeof clientTargets;
 
 type CallbackQuery = Record<string, string> & { client?: Client; link?: string };
 
@@ -86,7 +86,7 @@ export async function steamAuthRoutes(app: FastifyInstance) {
         const account = await db.transaction().execute(async (trx) => {
           // UNIQUE (user_id, platform_id) → eroare dacă userul are deja alt cont Steam legat.
           const created = await trx.insertInto('platform_accounts')
-            .values({ user_id: userId, platform_id: steam.id, external_id: steamid, display_name: persona?.name ?? steamid })
+            .values({ user_id: userId, platform_id: steam.id, external_id: steamid, display_name: persona?.name ?? steamid, avatar_url: persona?.avatar ?? null })
             .returning('id')
             .executeTakeFirstOrThrow();
           // Avatarul Steam devine avatarul profilului, doar dacă userul nu are deja unul.
@@ -113,7 +113,7 @@ export async function steamAuthRoutes(app: FastifyInstance) {
           .returning(['id', 'role', 'username', 'is_banned'])
           .executeTakeFirstOrThrow();
         const account = await trx.insertInto('platform_accounts')
-          .values({ user_id: newUser.id, platform_id: steam.id, external_id: steamid, display_name: persona?.name ?? steamid })
+          .values({ user_id: newUser.id, platform_id: steam.id, external_id: steamid, display_name: persona?.name ?? steamid, avatar_url: persona?.avatar ?? null })
           .returning('id')
           .executeTakeFirstOrThrow();
         return { newUser, accountId: account.id };

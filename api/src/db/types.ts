@@ -61,6 +61,7 @@ export interface PlatformAccountsTable {
   external_id: string;
   display_name: string;
   access_token_enc: Buffer | null;
+  avatar_url: string | null;
   linked_at: TimestampDefault;
   last_synced_at: Timestamp | null;
 }

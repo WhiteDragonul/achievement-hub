@@ -302,6 +302,55 @@ function RecentRow({ achievement }: { achievement: UnlockedAchievement }) {
   );
 }
 
+// Alegerea avatarului: cel de pe un cont legat (Steam / PSN / Xbox) sau unul propriu (link https).
+// Se salvează doar adresa aleasă, în users.avatar_url; avatarele platformelor se actualizează la fiecare sync.
+function AvatarPicker({ accounts, name, value, onChange }: {
+  accounts: ProfileAccount[]; name: string; value: string; onChange: (url: string) => void;
+}) {
+  const fromPlatforms = accounts.filter((account) => account.avatar_url);
+  const isPlatform = fromPlatforms.some((account) => account.avatar_url === value);
+  const [custom, setCustom] = useState(!isPlatform && value !== '');
+  const tile = (selected: boolean) =>
+    `pressable flex w-24 shrink-0 cursor-pointer flex-col items-center gap-2 rounded-[20px] border p-3 text-xs font-bold ${
+      selected ? 'border-white/60 bg-hover text-fg' : 'border-line bg-raised text-muted hover:text-fg'}`;
+
+  return (
+    // div, nu <Field>: Field e un <label>, iar un click oriunde în el ar apăsa primul buton.
+    <div className="space-y-1.5">
+      <p className="flex items-baseline justify-between text-[13px] font-bold text-muted">
+        Avatar
+        {fromPlatforms.length === 0 && <span className="text-xs font-normal text-faint">Link Steam, PSN or Xbox to use their avatar</span>}
+      </p>
+      <div className="flex flex-wrap gap-2.5">
+        {fromPlatforms.map((account) => (
+          <button
+            key={account.id} type="button" className={tile(!custom && value === account.avatar_url)}
+            onClick={() => { setCustom(false); onChange(account.avatar_url!); }}
+          >
+            <Avatar name={account.display_name} url={account.avatar_url} size={48} />
+            <PlatformBadge code={account.platform_code} />
+          </button>
+        ))}
+        <button type="button" className={tile(custom)} onClick={() => { setCustom(true); if (isPlatform) onChange(''); }}>
+          {custom && value ? <Avatar name={name} url={value} size={48} /> : (
+            <span className="flex h-12 w-12 items-center justify-center rounded-full border border-dashed border-line-strong">
+              <Icon name="link" className="h-5 w-5" />
+            </span>
+          )}
+          Custom
+        </button>
+        <button type="button" className={tile(!custom && value === '')} onClick={() => { setCustom(false); onChange(''); }}>
+          <Avatar name={name} size={48} />
+          Initials
+        </button>
+      </div>
+      {custom && (
+        <Input type="url" value={value} onChange={(e) => onChange(e.target.value)} aria-label="Custom avatar link" placeholder="https:// link to an image" className="mt-3" />
+      )}
+    </div>
+  );
+}
+
 // ---- Editarea profilului: date de bază, temă, joc preferat, vitrină ----
 function EditProfile({ profile, onSaved }: { profile: Profile; onSaved: () => void }) {
   const { user } = profile;
@@ -362,14 +411,11 @@ function EditProfile({ profile, onSaved }: { profile: Profile; onSaved: () => vo
         </div>
 
         <div className="space-y-7 px-5 py-6 sm:px-7">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Display name">
-              <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={64} placeholder={user.username} />
-            </Field>
-            <Field label="Avatar" hint="https link to an image">
-              <Input type="url" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://" />
-            </Field>
-          </div>
+          <Field label="Display name">
+            <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={64} placeholder={user.username} />
+          </Field>
+
+          <AvatarPicker accounts={profile.accounts} name={displayName || user.username} value={avatarUrl} onChange={setAvatarUrl} />
 
           <Field label="About you" hint={`${bio.length}/300`}>
             <textarea
@@ -559,13 +605,18 @@ function AccountRow({ account, editable, onChange }: { account: ProfileAccount; 
 }
 
 // Platformele încă nelegate. Steam: login Steam (dovedește că SteamID-ul e al tău), apoi primul sync pornește singur.
-// PSN / Xbox / Epic: fără integrare reală deocamdată (ar da date generate), deci apar ca „în curând”.
+// PSN: după Online ID. Xbox: login cu contul Microsoft (ca la Steam, în browser). Ambele cu date reale (D55).
+// Epic: fără API public, deci se leagă cu date demo (MockProvider) când ALLOW_MOCK_PLATFORMS=true (D54), altfel „în curând”.
 function ConnectPlatforms({ userId, linked, onLinked }: { userId: number; linked: ProfileAccount[]; onLinked: () => void }) {
   const platforms = useQuery({ queryKey: ['platforms'], queryFn: () => api<Platform[]>('/platforms') });
   const available = platforms.data?.filter((platform) => !linked.some((account) => account.platform_id === platform.id)) ?? [];
 
   const connectSteam = useMutation({
     mutationFn: () => api<{ url: string }>('/auth/steam/link', { method: 'POST', body: { client: isApp ? 'app' : 'web' } }),
+    onSuccess: ({ url }) => openExternal(url),
+  });
+  const connectXbox = useMutation({
+    mutationFn: () => api<{ url: string }>('/auth/xbox/link', { method: 'POST', body: { client: isApp ? 'app' : 'web' } }),
     onSuccess: ({ url }) => openExternal(url),
   });
 
@@ -588,6 +639,21 @@ function ConnectPlatforms({ userId, linked, onLinked }: { userId: number; linked
               <Icon name="link" className="h-4 w-4" /> Connect Steam
             </Button>
           </li>
+        ) : platform.code === 'xbox' ? (
+          <li key={platform.id} className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-line px-5 py-4">
+            <PlatformBadge code="xbox" full />
+            <p className="min-w-0 flex-1 basis-64 text-[13px] leading-relaxed text-muted">
+              You sign in with your Microsoft account; we only keep an encrypted access token, never your password.
+            </p>
+            <Button size="sm" onClick={() => connectXbox.mutate()} disabled={connectXbox.isPending}>
+              <Icon name="link" className="h-4 w-4" /> Connect Xbox
+            </Button>
+            {connectXbox.error && <div className="basis-full"><ErrorMessage error={connectXbox.error} /></div>}
+          </li>
+        ) : platform.code === 'psn' ? (
+          <li key={platform.id} className="border-t border-line px-5 py-4">
+            <PsnLinkForm onLinked={onLinked} />
+          </li>
         ) : platform.linkable ? (
           <li key={platform.id} className="border-t border-line px-5 py-4">
             <MockLinkForm platform={platform} userId={userId} onLinked={onLinked} />
@@ -606,9 +672,76 @@ function ConnectPlatforms({ userId, linked, onLinked }: { userId: number; linked
 }
 
 // Doar cu ALLOW_MOCK_PLATFORMS=true (demo): legare manuală pe o platformă cu date generate.
+// PSN: Sony nu are login pentru aplicații terțe, deci contul se caută după Online ID. Pe măsură ce userul scrie,
+// arătăm contul găsit (avatar + nume); un click pe „Connect” îl leagă și pornește primul sync.
+type PsnMatch = { online_id: string; avatar_url: string | null; already_linked: boolean };
+
+function PsnLinkForm({ onLinked }: { onLinked: () => void }) {
+  const [text, setText] = useState('');
+  const [query, setQuery] = useState('');
+  // Căutăm abia după o pauză de 400 ms în scris, nu la fiecare literă.
+  useEffect(() => {
+    const timer = setTimeout(() => setQuery(text.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [text]);
+
+  const valid = /^[A-Za-z0-9_-]{3,16}$/.test(query);
+  const search = useQuery({
+    queryKey: ['psn-search', query],
+    queryFn: () => api<PsnMatch>(`/auth/psn/search?${new URLSearchParams({ online_id: query })}`),
+    enabled: valid,
+    retry: false,
+  });
+  const link = useMutation({
+    mutationFn: (online_id: string) => api('/auth/psn/link', { method: 'POST', body: { online_id } }),
+    onSuccess: onLinked,
+  });
+  const match = valid && query === text.trim() ? search.data : undefined;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <PlatformBadge code="psn" full />
+        <Input
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          aria-label="PlayStation Online ID"
+          placeholder="Search your PSN Online ID"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          className="min-w-40 flex-1"
+        />
+      </div>
+      {valid && search.isFetching && <p className="text-[13px] text-muted">Searching PlayStation…</p>}
+      {valid && search.error && !search.isFetching && <ErrorMessage error={search.error} />}
+      {match && !search.isFetching && (
+        <div className="rise flex items-center gap-3 rounded-[20px] border border-line bg-raised p-2.5 pl-3">
+          <Avatar name={match.online_id} url={match.avatar_url} size={44} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-bold">{match.online_id}</p>
+            <p className="text-[12px] text-muted">{match.already_linked ? 'Already linked to a user' : 'PlayStation Network'}</p>
+          </div>
+          <Button size="sm" onClick={() => link.mutate(match.online_id)} disabled={link.isPending || match.already_linked}>
+            <Icon name="link" className="h-4 w-4" /> {link.isPending ? 'Connecting…' : 'Connect'}
+          </Button>
+        </div>
+      )}
+      <ErrorMessage error={link.error} />
+      <p className="text-[13px] text-muted">
+        Trophies must be visible to <span className="text-fg">Anyone</span> in your PSN privacy settings.
+      </p>
+    </div>
+  );
+}
+
 function MockLinkForm({ platform, userId, onLinked }: { platform: Platform; userId: number; onLinked: () => void }) {
   const link = useMutation({
-    mutationFn: (body: object) => api('/platform-accounts', { method: 'POST', body }),
+    // Ca la Steam: după legare pornește singur primul sync.
+    mutationFn: async (body: object) => {
+      const account = await api<{ id: number }>('/platform-accounts', { method: 'POST', body });
+      await api('/sync-runs', { method: 'POST', body: { platform_account_id: account.id } });
+    },
     onSuccess: onLinked,
   });
   function submit(event: FormEvent<HTMLFormElement>) {

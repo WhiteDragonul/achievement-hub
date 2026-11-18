@@ -19,9 +19,14 @@ export const config = {
   publicApiUrl: process.env.PUBLIC_API_URL ?? 'http://localhost:3000',
   // Steam Web API key (https://steamcommunity.com/dev/apikey). Fără ea, sync-ul Steam eșuează explicit.
   steamApiKey: process.env.STEAM_API_KEY ?? '',
+  // PSN (D55): tokenul NPSSO al autorului, din https://ca.account.sony.com/api/v1/ssocookie (după login pe playstation.com).
+  psnNpsso: process.env.PSN_NPSSO ?? '',
+  // Xbox (D55): aplicația înregistrată în Azure Portal (login cu cont Microsoft personal).
+  xboxClientId: process.env.XBOX_CLIENT_ID ?? '',
+  xboxClientSecret: process.env.XBOX_CLIENT_SECRET ?? '',
   // Fixtures (mii de useri generați) doar la cerere: implicit baza conține doar date reale (D45).
   seedOnStart: process.env.SEED_ON_START === 'true',
-  // PSN / Xbox / Epic nu au încă un provider real; cu false nu se pot lega conturi pe ele (doar date reale).
+  // Epic nu are provider real (D54, D55); cu true se poate lega cu date demo.
   allowMockPlatforms: process.env.ALLOW_MOCK_PLATFORMS === 'true',
   // Pe hosting gratuit (un singur serviciu) joburile de sync rulează în procesul API-ului (D50).
   runWorkerInApi: process.env.RUN_WORKER_IN_API === 'true',
