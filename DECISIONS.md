@@ -348,3 +348,10 @@ Acum serverul se autentifică o singură dată cu contul Xbox al autorului (clie
 `npm run xbox:token` scrie `XBOX_REFRESH_TOKEN` în `.env`) și citește achievement-urile publice ale oricărui gamertag.
 PSN și Xbox folosesc aceleași rute (`/auth/:platform/search`, `/auth/:platform/link`) și aceeași căutare cu avatar în
 profil. Aceeași limită ca la PSN: nu se dovedește că gamertag-ul e al userului; profilul trebuie să fie public.
+
+**D58: Temele Dark și Light (alb-negru), lângă Leonida.**
+Aceleași componente, alte valori pentru tokenurile din `index.css` (`:root[data-theme="dark|light"]`): în locul apusului,
+forme mari estompate în tonuri de gri care plutesc încet; sticla rămâne (blur, reflex sus), doar fără culoare; butonul
+principal e alb pe negru / negru pe alb. Culorile de raritate rămân,
+pentru că poartă sens. Câmpurile și cutia de eroare au acum tokenuri proprii (`--color-field`, `--color-error-*`),
+ca să arate bine pe fundal deschis. Tema rămâne o preferință a dispozitivului (localStorage), ca în D53.

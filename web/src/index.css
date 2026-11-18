@@ -48,6 +48,11 @@
   --color-rarity-common: rgb(255 240 235 / 0.7);
 
   --color-danger: #ff7a85;
+  /* Câmpurile de formular și cutia de eroare (redefinite de temele Dark / Light). */
+  --color-field: rgb(0 0 0 / 0.25);
+  --color-field-focus: rgb(0 0 0 / 0.35);
+  --color-error-bg: rgb(60 8 30 / 0.45);
+  --color-error-fg: #ffc9cf;
   --color-success: #6ff0b8;
 
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
@@ -235,6 +240,15 @@ main, aside, header, nav {
   animation: marquee 7s ease-in-out infinite alternate;
 }
 
+/* Logo-ul de pe ecranul de pornire „respiră” încet. */
+@keyframes splash {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.85; }
+}
+@utility splash {
+  animation: splash 1.6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -255,3 +269,147 @@ select option {
   scrollbar-width: thin;
   scrollbar-color: rgb(255 255 255 / 0.2) transparent;
 }
+
+/* ----------------------------------------------------------------------------
+   Temele Dark și Light (alb-negru): aceleași componente, alte valori pentru tokenuri.
+   Scena (apus, palmieri) dispare, sticla devine suprafață simplă, accentul e chiar culoarea textului.
+   Culorile de raritate rămân, pentru că poartă sens (ultra rar / foarte rar / rar).
+   ---------------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ink: #000;
+  --color-surface: rgb(12 12 12 / 0.4);
+  --color-raised: rgb(255 255 255 / 0.06);
+  --color-hover: rgb(255 255 255 / 0.1);
+  --color-line: rgb(255 255 255 / 0.12);
+  --color-line-strong: rgb(255 255 255 / 0.22);
+  --color-fg: #fafafa;
+  --color-muted: rgb(250 250 250 / 0.68);
+  --color-faint: rgb(250 250 250 / 0.45);
+  --color-sunset-pink: #fafafa;
+  --color-sunset-orange: #fafafa;
+  --color-field: rgb(255 255 255 / 0.05);
+  --color-field-focus: rgb(255 255 255 / 0.08);
+  --color-error-bg: rgb(255 122 133 / 0.1);
+  --color-error-fg: #ffb4bb;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-ink: #fff;
+  --color-surface: rgb(255 255 255 / 0.6);
+  --color-raised: rgb(0 0 0 / 0.04);
+  --color-hover: rgb(0 0 0 / 0.07);
+  --color-line: rgb(0 0 0 / 0.1);
+  --color-line-strong: rgb(0 0 0 / 0.2);
+  --color-fg: #0a0a0a;
+  --color-muted: rgb(10 10 10 / 0.64);
+  --color-faint: rgb(10 10 10 / 0.45);
+  --color-sunset-pink: #0a0a0a;
+  --color-sunset-orange: #0a0a0a;
+  --color-gold: #b7791f;
+  --color-silver: #6b7280;
+  --color-bronze: #b45309;
+  --color-rarity-ultra: #b7791f;
+  --color-rarity-very: #7c3aed;
+  --color-rarity-rare: #0369a1;
+  --color-rarity-common: rgb(10 10 10 / 0.6);
+  --color-danger: #dc2626;
+  --color-success: #059669;
+  --color-field: rgb(0 0 0 / 0.03);
+  --color-field-focus: #fff;
+  --color-error-bg: rgb(220 38 38 / 0.07);
+  --color-error-fg: #b91c1c;
+}
+
+/* Fundalul temelor alb-negru: forme mari, estompate, în tonuri de gri, care plutesc încet. Sticla are nevoie de
+   ceva în spate ca să „lucreze” (blur + reflexe), la fel ca apusul din Leonida. */
+:root:is([data-theme="dark"], [data-theme="light"]) :is(.scene-sun, .scene-glint, .scene-palms) { display: none; }
+:root:is([data-theme="dark"], [data-theme="light"]) :is(main, aside, header, nav) { text-shadow: none; }
+
+:root[data-theme="dark"] .scene { background: #050505; }
+:root[data-theme="light"] .scene { background: #ececee; }
+:root:is([data-theme="dark"], [data-theme="light"]) .scene::after {
+  inset: -20%;
+  filter: blur(60px);
+  animation: mono-drift 40s ease-in-out infinite alternate;
+}
+:root[data-theme="dark"] .scene::after {
+  background:
+    radial-gradient(38% 34% at 18% 22%, rgb(255 255 255 / 0.22), transparent 70%),
+    radial-gradient(30% 28% at 82% 30%, rgb(255 255 255 / 0.12), transparent 70%),
+    radial-gradient(44% 40% at 62% 86%, rgb(255 255 255 / 0.16), transparent 70%),
+    radial-gradient(24% 22% at 30% 70%, rgb(255 255 255 / 0.08), transparent 70%);
+}
+:root[data-theme="light"] .scene::after {
+  background:
+    radial-gradient(38% 34% at 18% 22%, rgb(0 0 0 / 0.16), transparent 70%),
+    radial-gradient(30% 28% at 82% 30%, rgb(255 255 255 / 0.95), transparent 70%),
+    radial-gradient(44% 40% at 62% 86%, rgb(0 0 0 / 0.12), transparent 70%),
+    radial-gradient(24% 22% at 30% 70%, rgb(255 255 255 / 0.9), transparent 70%);
+}
+@keyframes mono-drift {
+  from { transform: translate(0, 0) rotate(0deg); }
+  to { transform: translate(4%, -3%) rotate(8deg); }
+}
+
+/* Sticla în alb-negru: aceeași idee ca în Leonida (blur, margine luminoasă, reflex sus), fără culoare. */
+:root[data-theme="dark"] .panel {
+  background: linear-gradient(155deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.02) 45%), rgb(12 12 12 / 0.35);
+  border-color: rgb(255 255 255 / 0.14);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 18px 50px -20px rgb(0 0 0 / 0.8);
+}
+:root[data-theme="dark"] .glass-grid {
+  background: rgb(255 255 255 / 0.12);
+  border-color: rgb(255 255 255 / 0.14);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 18px 50px -20px rgb(0 0 0 / 0.8);
+}
+:root[data-theme="dark"] .glass-bar {
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.03)), rgb(14 14 14 / 0.45);
+  border-color: rgb(255 255 255 / 0.16);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 24px 60px -18px rgb(0 0 0 / 0.85);
+}
+:root[data-theme="dark"] .glass-pill {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.22), rgb(255 255 255 / 0.08));
+  border-color: rgb(255 255 255 / 0.26);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.45), 0 6px 18px -6px rgb(0 0 0 / 0.6);
+}
+
+:root[data-theme="light"] .panel {
+  background: linear-gradient(155deg, rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.45) 45%), rgb(255 255 255 / 0.3);
+  border-color: rgb(255 255 255 / 0.8);
+  box-shadow: inset 0 1px 0 #fff, 0 18px 50px -20px rgb(0 0 0 / 0.18);
+}
+:root[data-theme="light"] .glass-grid {
+  background: rgb(0 0 0 / 0.06);
+  border-color: rgb(255 255 255 / 0.8);
+  box-shadow: inset 0 1px 0 #fff, 0 18px 50px -20px rgb(0 0 0 / 0.18);
+}
+:root[data-theme="light"] .glass-bar {
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.5)), rgb(255 255 255 / 0.3);
+  border-color: rgb(255 255 255 / 0.85);
+  box-shadow: inset 0 1px 0 #fff, 0 24px 60px -18px rgb(0 0 0 / 0.22);
+}
+:root[data-theme="light"] .glass-pill {
+  background: linear-gradient(180deg, #fff, rgb(255 255 255 / 0.7));
+  border-color: rgb(0 0 0 / 0.08);
+  box-shadow: inset 0 1px 0 #fff, 0 6px 18px -6px rgb(0 0 0 / 0.25);
+}
+
+/* Butonul principal: alb pe negru (Dark) și negru pe alb (Light). */
+:root:is([data-theme="dark"], [data-theme="light"]) .sunset {
+  background: var(--color-fg);
+  border-color: var(--color-fg);
+  box-shadow: none;
+}
+
+/* Titlul colorat de pe pagina de login devine culoarea textului. */
+:root:is([data-theme="dark"], [data-theme="light"]) .hero-accent {
+  background: none;
+  -webkit-text-fill-color: var(--color-muted);
+}
+
+:root[data-theme="light"] select option { background: #fff; color: #0a0a0a; }
+:root[data-theme="light"] ::selection { background: rgb(0 0 0 / 0.15); }
+:root[data-theme="light"] :focus-visible { outline-color: rgb(0 0 0 / 0.8); }
+:root[data-theme="light"] * { scrollbar-color: rgb(0 0 0 / 0.2) transparent; }

@@ -49,7 +49,7 @@ export function LoginPage() {
         <div className="rise max-w-lg">
           <p className="eyebrow mb-5">Steam · PlayStation · Xbox · Epic</p>
           <h1 className="font-display font-extrabold tracking-[-0.03em] text-[68px] leading-[0.98]">
-            Every trophy,<br /><em className="bg-gradient-to-r from-[#ffe2a6] to-[#ffa8cf] bg-clip-text not-italic text-transparent">in one place.</em>
+            Every trophy,<br /><em className="hero-accent bg-gradient-to-r from-[#ffe2a6] to-[#ffa8cf] bg-clip-text not-italic text-transparent">in one place.</em>
           </h1>
           <p className="mt-6 max-w-md leading-relaxed text-muted">
             Link your accounts and your library and achievements sync into one unified profile,
@@ -66,7 +66,7 @@ export function LoginPage() {
           <div className="mb-10 text-center lg:hidden">
             <div className="flex justify-center"><Logo size={64} /></div>
             <h1 className="mt-6 font-display font-extrabold tracking-[-0.03em] text-[44px] leading-none">
-              Every trophy, <em className="bg-gradient-to-r from-[#ffe2a6] to-[#ffa8cf] bg-clip-text not-italic text-transparent">in one place.</em>
+              Every trophy, <em className="hero-accent bg-gradient-to-r from-[#ffe2a6] to-[#ffa8cf] bg-clip-text not-italic text-transparent">in one place.</em>
             </h1>
           </div>
 
@@ -179,7 +179,7 @@ export function AuthCallbackPage() {
         <div className="mb-5 flex justify-center"><Logo size={56} /></div>
         {error ? (
           <>
-            <p className="mb-5 text-sm text-[#ffb4b4]">{error}</p>
+            <p className="mb-5 text-sm text-danger">{error}</p>
             <Button onClick={() => navigate(user ? `/users/${user.id}` : '/login')}>{user ? 'Back to profile' : 'Back to sign in'}</Button>
           </>
         ) : (

@@ -202,7 +202,7 @@ export function ProfilePage() {
         {library.data?.pages[0]?.length === 0 && (
           <div className="panel rounded-3xl">
             <Empty icon="games" title="No library yet">
-              {isOwnProfile ? 'Connect your Steam account and your games show up here after the first sync.' : 'This player has no synced games yet.'}
+              {isOwnProfile ? 'Connect a platform to import your games.' : 'No games yet.'}
             </Empty>
           </div>
         )}
@@ -582,7 +582,7 @@ function AccountRow({ account, editable, onChange }: { account: ProfileAccount; 
         </div>
       </div>
       {latest?.status === 'failed' && !showHistory && (
-        <p className="border-t border-line px-5 py-3 text-sm text-[#ffb4b4]">The last sync failed: {latest.error_message}</p>
+        <p className="border-t border-line px-5 py-3 text-sm text-danger">The last sync failed: {latest.error_message}</p>
       )}
       {(sync.error || unlink.error) && <div className="px-5"><ErrorMessage error={sync.error ?? unlink.error} /></div>}
       {showHistory && (
@@ -619,35 +619,27 @@ function ConnectPlatforms({ userId, linked, onLinked }: { userId: number; linked
   if (available.length === 0) return null;
   return (
     <Card className="!p-0 !border-dashed !border-line-strong !bg-transparent">
-      <div className="px-5 pt-5">
-        <p className="font-medium">Connect a platform</p>
-        <p className="mt-0.5 text-sm text-muted">Games and achievements are imported automatically once connected.</p>
-      </div>
+      <p className="px-5 pt-5 font-medium">Connect a platform</p>
       <ul className="mt-4">
         {available.map((platform) => platform.code === 'steam' ? (
-          <li key={platform.id} className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-line px-5 py-4">
+          <li key={platform.id} className="flex items-center justify-between gap-3 border-t border-line px-5 py-3.5">
             <PlatformBadge code="steam" full />
-            <p className="min-w-0 flex-1 basis-64 text-[13px] leading-relaxed text-muted">
-              You sign in on steamcommunity.com; we only receive your SteamID, never your password.
-              Set "Game details" to <span className="text-fg">Public</span> in your Steam privacy settings, otherwise Steam hides your games.
-            </p>
             <Button size="sm" onClick={() => connectSteam.mutate()} disabled={connectSteam.isPending}>
-              <Icon name="link" className="h-4 w-4" /> Connect Steam
+              <Icon name="link" className="h-4 w-4" /> Connect
             </Button>
           </li>
         ) : platform.code === 'psn' || platform.code === 'xbox' ? (
-          <li key={platform.id} className="border-t border-line px-5 py-4">
+          <li key={platform.id} className="border-t border-line px-5 py-3.5">
             <ConsoleLinkForm platform={platform.code} onLinked={onLinked} />
           </li>
         ) : platform.linkable ? (
-          <li key={platform.id} className="border-t border-line px-5 py-4">
+          <li key={platform.id} className="border-t border-line px-5 py-3.5">
             <MockLinkForm platform={platform} userId={userId} onLinked={onLinked} />
           </li>
         ) : (
-          <li key={platform.id} className="flex items-center gap-4 border-t border-line px-5 py-4">
+          <li key={platform.id} className="flex items-center justify-between gap-3 border-t border-line px-5 py-3.5">
             <PlatformBadge code={platform.code} full />
-            <p className="flex-1 text-sm text-faint">{platform.name}</p>
-            <span className="eyebrow">Coming soon</span>
+            <span className="eyebrow">Soon</span>
           </li>
         ))}
       </ul>
@@ -656,14 +648,13 @@ function ConnectPlatforms({ userId, linked, onLinked }: { userId: number; linked
   );
 }
 
-// Doar cu ALLOW_MOCK_PLATFORMS=true (demo): legare manuală pe o platformă cu date generate.
 // PSN / Xbox: Sony și Microsoft nu au login simplu pentru aplicații terțe, deci contul se caută după nume. Pe măsură ce
 // userul scrie, arătăm contul găsit (avatar + nume); un click pe „Connect” îl leagă și pornește primul sync.
 type ConsoleMatch = { name: string; avatar_url: string | null; already_linked: boolean };
 
 const consoleText = {
-  psn: { label: 'PlayStation', field: 'PSN Online ID', privacy: 'Trophies', network: 'PlayStation Network' },
-  xbox: { label: 'Xbox', field: 'Xbox gamertag', privacy: 'Game and app history and Achievements', network: 'Xbox Live' },
+  psn: { label: 'PlayStation', field: 'Online ID' },
+  xbox: { label: 'Xbox', field: 'Gamertag' },
 };
 
 function ConsoleLinkForm({ platform, onLinked }: { platform: 'psn' | 'xbox'; onLinked: () => void }) {
@@ -697,21 +688,20 @@ function ConsoleLinkForm({ platform, onLinked }: { platform: 'psn' | 'xbox'; onL
           value={text}
           onChange={(event) => setText(event.target.value)}
           aria-label={labels.field}
-          placeholder={`Search your ${labels.field}`}
+          placeholder={labels.field}
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
           className="min-w-40 flex-1"
         />
       </div>
-      {valid && search.isFetching && <p className="text-[13px] text-muted">Searching {labels.label}…</p>}
       {valid && search.error && !search.isFetching && <ErrorMessage error={search.error} />}
       {match && !search.isFetching && (
         <div className="rise flex items-center gap-3 rounded-[20px] border border-line bg-raised p-2.5 pl-3">
           <Avatar name={match.name} url={match.avatar_url} size={44} />
           <div className="min-w-0 flex-1">
             <p className="truncate font-bold">{match.name}</p>
-            <p className="text-[12px] text-muted">{match.already_linked ? 'Already linked to a user' : labels.network}</p>
+            {match.already_linked && <p className="text-[12px] text-muted">Already linked</p>}
           </div>
           <Button size="sm" onClick={() => link.mutate(match.name)} disabled={link.isPending || match.already_linked}>
             <Icon name="link" className="h-4 w-4" /> {link.isPending ? 'Connecting…' : 'Connect'}
@@ -719,13 +709,11 @@ function ConsoleLinkForm({ platform, onLinked }: { platform: 'psn' | 'xbox'; onL
         </div>
       )}
       <ErrorMessage error={link.error} />
-      <p className="text-[13px] text-muted">
-        {labels.privacy} must be visible to <span className="text-fg">{platform === 'psn' ? 'Anyone' : 'Everybody'}</span> in your {labels.label} privacy settings.
-      </p>
     </div>
   );
 }
 
+// Epic: doar cu ALLOW_MOCK_PLATFORMS=true, cu date generate (D54).
 function MockLinkForm({ platform, userId, onLinked }: { platform: Platform; userId: number; onLinked: () => void }) {
   const link = useMutation({
     // Ca la Steam: după legare pornește singur primul sync.
@@ -735,18 +723,19 @@ function MockLinkForm({ platform, userId, onLinked }: { platform: Platform; user
     },
     onSuccess: onLinked,
   });
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const name = String(new FormData(event.currentTarget).get('display_name'));
-    link.mutate({ user_id: userId, platform_id: platform.id, external_id: `${platform.code}-${userId}`, display_name: name });
-  }
+  const { user } = useAuth();
+  // Date demo (ALLOW_MOCK_PLATFORMS=true): contul primește numele userului, fără alt pas.
+  const connect = () => link.mutate({
+    user_id: userId, platform_id: platform.id, external_id: `${platform.code}-${userId}`, display_name: user?.display_name ?? user?.username ?? 'Player',
+  });
   return (
-    <form onSubmit={submit} className="flex flex-wrap items-center gap-3">
-      <PlatformBadge code={platform.code} full />
-      <Input name="display_name" aria-label={`Name on ${platform.name}`} placeholder={`Name on ${platform.name} (demo data)`} required className="min-w-40 flex-1" />
-      <Button type="submit" size="sm" variant="secondary" disabled={link.isPending}>Link (demo)</Button>
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-3">
+        <PlatformBadge code={platform.code} full />
+        <Button size="sm" variant="secondary" onClick={connect} disabled={link.isPending}>Connect demo</Button>
+      </div>
       <ErrorMessage error={link.error} />
-    </form>
+    </div>
   );
 }
 

@@ -6,7 +6,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Navigate, NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth, useCurrentUser } from '../auth';
-import { Avatar, Icon, Loading } from './ui';
+import { Avatar, Icon } from './ui';
 import logoUrl from '../assets/logo.png';
 
 function useNavItems() {
@@ -188,9 +188,20 @@ function Shell() {
   );
 }
 
+// Ecranul de pornire: cât timp se verifică sesiunea (refresh token din Keychain / localStorage), doar logo-ul peste
+// scenă, în locul rândurilor de încărcare.
+function Splash() {
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4">
+      <div className="splash"><Logo size={88} /></div>
+      <span className="text-[17px] font-extrabold tracking-tight">Achievement Hub</span>
+    </div>
+  );
+}
+
 export function Layout() {
   const { user, loading } = useAuth();
-  if (loading) return <div className="mx-auto max-w-md px-4 pt-24"><Loading rows={3} /></div>;
+  if (loading) return <Splash />;
   if (!user) return <Navigate to="/login" replace />;
   return <Shell />;
 }

@@ -200,3 +200,12 @@ legări, mesaje clare fără chei; în browser alegerea avatarului PSN. Xbox net
 Reparat: titlehub raportează uneori 0 achievement-uri la jocuri care au, deci filtrăm după tipul „Game”.
 **Verificat:** `tsc` (api, web); prin API: căutare, legare și sync real pe „Major Nelson” (250 de jocuri, 1.560 de
 achievement-uri), PSN în continuare funcțional prin rutele comune.
+
+## Interfață curată, ecran de pornire, temele Dark / Light (2026-11-18)
+**Prompt:** „scoate tot textul in plus … fa la account o chestie cu privacy and security”; „vreau sa fie ceva peste sa
+acopere chestia aia” (rândurile de încărcare la pornire); „fa inca 2 tema black and white”; „fa si un background … sa fie
+liquid glass”.
+**Rezultat:** „Connect a platform” are câte un rând pe platformă (badge + buton / câmp); explicațiile de confidențialitate
+s-au mutat în Settings → Privacy & security; la pornire apare logo-ul peste scenă în locul rândurilor de încărcare;
+temele Dark și Light cu fundal alb-negru estompat și sticlă fără culoare (D58).
+**Verificat:** `tsc` (web); simulatorul iPhone (profil); în browser Settings și clasamentul în ambele teme; aplicația Mac refăcută.

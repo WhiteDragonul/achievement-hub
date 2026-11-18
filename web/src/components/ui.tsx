@@ -89,8 +89,8 @@ export function Button({ variant = 'primary', size = 'md', className = '', ...pr
 // Clasa comună câmpurilor de formular (input, select, textarea).
 // text-base (16px): sub 16px, iOS mărește pagina când atingi câmpul și nu o mai micșorează.
 export const fieldClass =
-  'w-full rounded-2xl border border-line bg-black/25 px-4 text-base text-fg outline-none transition-colors placeholder:text-faint ' +
-  'shadow-[inset_0_1px_3px_rgb(0_0_0/0.3)] backdrop-blur-xl hover:border-line-strong focus:border-sunset-pink/70 focus:bg-black/35 ' +
+  'w-full rounded-2xl border border-line bg-field px-4 text-base text-fg outline-none transition-colors placeholder:text-faint ' +
+  'shadow-[inset_0_1px_3px_rgb(0_0_0/0.3)] backdrop-blur-xl hover:border-line-strong focus:border-sunset-pink/70 focus:bg-field-focus ' +
   'focus:shadow-[inset_0_1px_3px_rgb(0_0_0/0.3),0_0_0_4px_rgb(255_95_162/0.2)] focus-visible:outline-none';
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
@@ -181,7 +181,7 @@ export function ErrorMessage({ error }: { error: unknown }) {
   const message = error instanceof Error ? error.message : 'Unknown error';
   const constraint = error instanceof ApiError ? error.constraint : undefined;
   return (
-    <p role="alert" className="mb-4 flex items-start gap-2.5 rounded-2xl border border-danger/35 bg-[rgb(60_8_30/0.45)] px-4 py-3 text-sm text-[#ffc9cf] backdrop-blur-xl">
+    <p role="alert" className="mb-4 flex items-start gap-2.5 rounded-2xl border border-danger/35 bg-error-bg px-4 py-3 text-sm text-error-fg backdrop-blur-xl">
       <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-danger" />
       <span>
         {message}
