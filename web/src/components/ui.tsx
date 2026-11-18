@@ -87,8 +87,9 @@ export function Button({ variant = 'primary', size = 'md', className = '', ...pr
 }
 
 // Clasa comună câmpurilor de formular (input, select, textarea).
+// text-base (16px): sub 16px, iOS mărește pagina când atingi câmpul și nu o mai micșorează.
 export const fieldClass =
-  'w-full rounded-2xl border border-line bg-black/25 px-4 text-[15px] text-fg outline-none transition-colors placeholder:text-faint ' +
+  'w-full rounded-2xl border border-line bg-black/25 px-4 text-base text-fg outline-none transition-colors placeholder:text-faint ' +
   'shadow-[inset_0_1px_3px_rgb(0_0_0/0.3)] backdrop-blur-xl hover:border-line-strong focus:border-sunset-pink/70 focus:bg-black/35 ' +
   'focus:shadow-[inset_0_1px_3px_rgb(0_0_0/0.3),0_0_0_4px_rgb(255_95_162/0.2)] focus-visible:outline-none';
 
