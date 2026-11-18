@@ -3,7 +3,7 @@
 //  - de la `md` (768px): sidebar de sticlă plutitor în stânga.
 // Elementul activ e marcat de un indicator care alunecă la noua poziție (transform).
 // Fără user logat, Layout-ul trimite la /login: toate paginile din interior sunt protejate.
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Navigate, NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth, useCurrentUser } from '../auth';
 import { Avatar, Icon, Loading } from './ui';
@@ -45,6 +45,23 @@ export function Logo({ size = 32 }: { size?: number }) {
   );
 }
 
+// Text pe un singur rând: dacă nu încape, se derulează încet stânga-dreapta în loc să fie tăiat cu „…”.
+function ScrollingText({ text, className }: { text: string; className?: string }) {
+  const box = useRef<HTMLParagraphElement>(null);
+  const [shift, setShift] = useState(0);
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (el) setShift(Math.max(0, el.scrollWidth - el.clientWidth));
+  }, [text]);
+  return (
+    <p ref={box} title={text} className={`overflow-hidden whitespace-nowrap ${className ?? ''}`}>
+      <span className={`inline-block ${shift > 0 ? 'marquee' : ''}`} style={{ '--shift': `-${shift}px` } as CSSProperties}>
+        {text}
+      </span>
+    </p>
+  );
+}
+
 function SettingsButton() {
   return (
     <NavLink
@@ -82,7 +99,7 @@ function Shell() {
   return (
     <div className="min-h-dvh md:flex md:gap-2 md:p-4">
       {/* Sidebar de sticlă, plutitor: doar pe ecrane late */}
-      <aside className="glass-bar sticky top-4 hidden h-[calc(100dvh-2rem)] w-60 shrink-0 flex-col rounded-[28px] px-3 py-5 md:flex">
+      <aside className="glass-bar sticky top-4 hidden h-[calc(100dvh-2rem)] w-64 shrink-0 flex-col rounded-[28px] px-3 py-5 md:flex">
         <div className="mb-10 flex items-center gap-2.5 px-2.5">
           <Logo size={28} />
           <span className="text-[15px] font-extrabold tracking-tight">Achievement Hub</span>
@@ -111,10 +128,10 @@ function Shell() {
         </nav>
 
         {user && (
-          <div className="mt-auto flex items-center gap-3 rounded-[20px] border border-line bg-raised p-2 pl-2.5">
+          <div className="mt-auto flex items-center gap-2 rounded-[20px] border border-line bg-raised p-2 pl-2.5">
             <Avatar name={name} url={user.avatar_url} size={34} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold">{name}</p>
+              <ScrollingText text={name} className="text-sm font-bold" />
               <p className="eyebrow !text-[10px]">{roleLabels[user.role]}</p>
             </div>
             <SettingsButton />

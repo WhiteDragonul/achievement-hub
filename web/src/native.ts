@@ -25,7 +25,11 @@ export const secureStore = {
 export async function openExternal(url: string) {
   if (!isApp) return window.location.assign(url);
   const { openUrl } = await import('@tauri-apps/plugin-opener');
-  await openUrl(url);
+  // Browserul sistemului cere o adresă http(s) completă. În dezvoltare (fără VITE_API_URL) linkul e relativ („/api/...”),
+  // iar pe iOS pagina are adresa tauri://localhost, pe care Safari nu o poate deschide; de aceea îl completăm cu
+  // serverul Vite (http://localhost:5173, care trimite /api la API prin proxy).
+  const base = window.location.protocol.startsWith('http') ? window.location.href : 'http://localhost:5173';
+  await openUrl(new URL(url, base).href);
 }
 
 // În aplicație: primește link-urile achievementhub://auth/callback#... și le dă mai departe ca fragment („#...”).

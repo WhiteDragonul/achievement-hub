@@ -1,4 +1,4 @@
-import { StrictMode, useEffect } from 'react';
+import { StrictMode, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes, useNavigate } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -17,12 +17,16 @@ import { onDeepLink } from './native';
 import './index.css';
 
 // În aplicația Tauri: link-ul achievementhub://auth/callback#tokenuri ajunge la aceeași pagină ca pe site.
+// Ascultătorul se înregistrează o singură dată: `navigate` se schimbă la fiecare rută, iar o reînregistrare ar relua
+// link-ul de pornire (getCurrent) și ar trimite iar la /auth/callback, adică o buclă (ecranul „pâlpâie”).
 function DeepLinkBridge() {
   const navigate = useNavigate();
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
   useEffect(() => {
-    const stop = onDeepLink((fragment) => navigate(`/auth/callback#${fragment}`));
+    const stop = onDeepLink((fragment) => navigateRef.current(`/auth/callback#${fragment}`));
     return () => { stop.then((unlisten) => unlisten()); };
-  }, [navigate]);
+  }, []);
   return null;
 }
 

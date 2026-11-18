@@ -226,6 +226,15 @@ main, aside, header, nav {
   from { transform: scaleX(0); }
 }
 
+/* Numele prea lung alunecă până la capăt și înapoi; --shift = cât iese din cutie (calculat în ScrollingText). */
+@keyframes marquee {
+  0%, 15% { transform: translateX(0); }
+  85%, 100% { transform: translateX(var(--shift)); }
+}
+@utility marquee {
+  animation: marquee 7s ease-in-out infinite alternate;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
