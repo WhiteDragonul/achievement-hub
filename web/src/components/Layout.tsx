@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { Navigate, NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth, useCurrentUser } from '../auth';
 import { Avatar, Icon, Loading } from './ui';
+import logoUrl from '../assets/logo.png';
 
 function useNavItems() {
   const { userId, isModerator } = useCurrentUser();
@@ -31,15 +32,29 @@ function useActiveIndex(items: { to: string }[]) {
 
 const roleLabels = { user: 'Player', moderator: 'Moderator', admin: 'Administrator' };
 
-// Semnul aplicației: o cupă pe o plăcuță de sticlă în culorile apusului.
+// Semnul aplicației: cupa cu coroana în spate (imaginea din assets/logo.png).
 export function Logo({ size = 32 }: { size?: number }) {
   return (
-    <span
-      className="sunset flex shrink-0 items-center justify-center rounded-[30%] text-ink"
-      style={{ width: size, height: size }}
+    <img
+      src={logoUrl}
+      alt="Achievement Hub"
+      width={size}
+      height={size}
+      className="shrink-0 rounded-[24%] shadow-[0_4px_14px_rgb(0_0_0/0.35)]"
+    />
+  );
+}
+
+function SettingsButton() {
+  return (
+    <NavLink
+      to="/settings"
+      title="Settings"
+      aria-label="Settings"
+      className={({ isActive }) => `pressable flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-raised hover:text-fg ${isActive ? 'bg-raised text-fg' : 'text-muted'}`}
     >
-      <Icon name="trophy" className="h-[58%] w-[58%]" />
-    </span>
+      <Icon name="settings" className="h-4 w-4" />
+    </NavLink>
   );
 }
 
@@ -102,6 +117,7 @@ function Shell() {
               <p className="truncate text-sm font-bold">{name}</p>
               <p className="eyebrow !text-[10px]">{roleLabels[user.role]}</p>
             </div>
+            <SettingsButton />
             <LogoutButton />
           </div>
         )}
@@ -116,6 +132,7 @@ function Shell() {
           </span>
           <span className="flex items-center gap-1">
             {user && <Avatar name={name} url={user.avatar_url} size={28} />}
+            <SettingsButton />
             <LogoutButton />
           </span>
         </div>

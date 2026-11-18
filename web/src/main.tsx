@@ -11,6 +11,8 @@ import { GameDetailPage } from './pages/GameDetailPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { FriendsPage } from './pages/FriendsPage';
 import { AdminPage } from './pages/AdminPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { applyTheme, getTheme } from './theme';
 import { onDeepLink } from './native';
 import './index.css';
 
@@ -30,6 +32,8 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
 });
 
+applyTheme(getTheme());
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -47,6 +51,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="users/:id" element={<ProfilePage />} />
               <Route path="friends" element={<FriendsPage />} />
               <Route path="admin" element={<AdminPage />} />
+              <Route path="settings" element={<SettingsPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

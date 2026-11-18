@@ -41,9 +41,9 @@ export function LoginPage() {
     <div className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
       {/* Stânga (doar desktop): ce face aplicația + cum se punctează raritatea. */}
       <aside className="relative hidden flex-col justify-between overflow-hidden p-12 lg:flex">
-        <div className="flex items-center gap-2.5">
-          <Logo size={30} />
-          <span className="font-semibold tracking-tight">Achievement Hub</span>
+        <div className="flex flex-col items-center gap-3">
+          <Logo size={64} />
+          <span className="font-bold tracking-tight">Achievement Hub</span>
         </div>
 
         <div className="rise max-w-lg">
@@ -63,8 +63,8 @@ export function LoginPage() {
       {/* Dreapta: formularul */}
       <main className="flex items-center justify-center px-5 py-12 lg:pr-12">
         <div className="panel rise w-full max-w-[420px] rounded-[32px] p-6 sm:p-8">
-          <div className="mb-10 lg:hidden">
-            <Logo size={40} />
+          <div className="mb-10 text-center lg:hidden">
+            <div className="flex justify-center"><Logo size={64} /></div>
             <h1 className="mt-6 font-display font-extrabold tracking-[-0.03em] text-[44px] leading-none">
               Every trophy, <em className="bg-gradient-to-r from-[#ffe2a6] to-[#ffa8cf] bg-clip-text not-italic text-transparent">in one place.</em>
             </h1>
@@ -176,7 +176,7 @@ export function AuthCallbackPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
       <div className="panel w-full max-w-sm rounded-2xl p-8 text-center">
-        <div className="mb-5 flex justify-center"><Logo size={36} /></div>
+        <div className="mb-5 flex justify-center"><Logo size={56} /></div>
         {error ? (
           <>
             <p className="mb-5 text-sm text-[#ffb4b4]">{error}</p>

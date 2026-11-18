@@ -170,3 +170,9 @@ login-ul Steam prin deep-link (cere API-ul găzduit).
 numere `en-US`; mesajele API (`errors.ts`, rute, Steam), antetele CSV, foile Excel și raportul PDF în engleză (D52).
 Reparat în trecere: culoarea pusă pe `<html>` acoperea scena din fundal; acum doar `<html>` are fundal.
 **Verificat:** `tsc` și build (web, api); testele API 23/25 (cele 2 eșecuri existau și înainte); în browser cu API simulat.
+
+## Logo final + Settings cu tema Leonida (2026-11-18)
+**Prompt:** „asta e logo ul. la setari pune ceva cu Theme si sa fie Leonida”; „pe pagina principala vreau sa fie centrat logo ul si putin mai mare”.
+**Rezultat:** logo-ul nou în `web/src/assets/logo.png`, favicon, apple-touch-icon și iconițele Tauri regenerate; pagina
+`/settings` cu tema Leonida (D53); pe pagina de login logo-ul e centrat și mai mare (64px).
+**Verificat:** `tsc`; în browser (desktop + mobil) pagina de login și Settings.

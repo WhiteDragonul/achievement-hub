@@ -312,3 +312,8 @@ Aplicația se prezintă la o convenție, cu public internațional. Tot ce vede u
 formatarea datelor și numerelor (`en-US`), mesajele de eroare ale API-ului (inclusiv traducerea erorilor Postgres din
 `errors.ts`), antetele CSV, foile Excel și raportul PDF. Comentariile, documentația din `/docs` și jurnalele rămân în
 română, pentru susținerea proiectului. Excepție: erorile pentru programator (ex. `useAuth` folosit în afara provider-ului).
+
+**D53: Logo final și tema „Leonida” în Settings.** Logo-ul (cupă cu coroană în spate, pe apus) e imaginea finală a autorului;
+din ea se generează favicon-ul, iconița web și iconițele aplicațiilor (`tauri icon`; colțuri rotunjite pe desktop, pătrat pe iOS,
+unde sistemul rotunjește singur). Tema e o preferință locală (`localStorage`), nu un câmp în baza de date: nu ține de cont și
+nu trebuie sincronizată. O singură temă acum; lista din `theme.ts` permite adăugarea altora.

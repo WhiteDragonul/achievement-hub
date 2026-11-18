@@ -171,6 +171,15 @@ conturi sau jocuri nu poate fi ștearsă (ON DELETE RESTRICT), iar pagina afișe
 
 ---
 
+## 7. Settings (`/settings`)
+
+Se deschide din butonul cu rotiță de lângă „Sign out” (sidebar pe desktop, bara de sus pe telefon).
+Secțiunea **Theme** arată temele disponibile ca mostre; acum există una, **Leonida** (apusul „Sunset Glass”, D49).
+Alegerea se ține în `localStorage` (preferință a dispozitivului, nu a contului) și se aplică prin `data-theme` pe `<html>`
+(`web/src/theme.ts`). Nu cere API.
+
+---
+
 ## Cum apar erorile din baza de date
 
 Formularele nu dublează regulile bazei de date. Când o operație încalcă o constrângere, API-ul întoarce mesajul
