@@ -65,4 +65,4 @@ pornire, deci scriptul se rulează din nou înainte de fiecare prezentare.
 | `loadtest/` | scriptul k6 |
 | `docs/` | [prezentare](docs/prezentare.md), [schema](docs/schema.md), [fixtures](docs/fixtures.md), [API](docs/api.md), [pagini](docs/pagini.md), [indecși](docs/indexes.md), [load test](docs/loadtest.md) |
 
-Decizii de design: [DECISIONS.md](DECISIONS.md). Jurnalul folosirii AI: [AI_LOG.md](AI_LOG.md).
+Decizii de design: [DECISIONS.md](DECISIONS.md).

@@ -9,3 +9,11 @@ db/supabase_apply_all.sql
 .claude/
 .claudeignore
 !web/.env.app
+
+# Fișierele uneltelor AI (jurnal, instrucțiuni pentru asistent): rămân doar local
+AI_LOG.md
+CLAUDE.md
+**/CLAUDE.md
+AGENTS.md
+.cursor/
+.aider*
