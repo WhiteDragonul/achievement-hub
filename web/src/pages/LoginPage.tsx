@@ -3,8 +3,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 import { steamLoginUrl } from '../api';
 import { useAuth } from '../auth';
-import { Icon } from '../components/Layout';
-import { Button, ErrorMessage, Input, Segmented } from '../components/ui';
+import { Logo } from '../components/Layout';
+import { Button, ErrorMessage, Field, Input, Segmented, rarityStyles } from '../components/ui';
 
 const modes = [
   { id: 'login', label: 'Autentificare' },
@@ -37,48 +37,108 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <span className="glass-tint mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[22px]">
-            <Icon name="trophy" className="h-8 w-8" />
-          </span>
-          <h1 className="text-3xl font-bold tracking-tight">Achievement Hub</h1>
-          <p className="mt-2 text-sm text-white/55">Toate trofeele tale (Steam, PlayStation, Xbox, Epic) într-un singur profil.</p>
+    <div className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
+      {/* Stânga (doar desktop): ce face aplicația + cum se punctează raritatea. */}
+      <aside className="relative hidden flex-col justify-between overflow-hidden p-12 lg:flex">
+        <div className="flex items-center gap-2.5">
+          <Logo size={30} />
+          <span className="font-semibold tracking-tight">Achievement Hub</span>
         </div>
 
-        <div className="glass rounded-[32px] p-5">
-          <Segmented options={modes} value={mode} onChange={(value) => { setMode(value); setError(null); }} />
-          <ErrorMessage error={error} />
-          <form onSubmit={submit} className="space-y-3">
-            {mode === 'register' && (
-              <Input name="username" placeholder="Username (3–32: litere, cifre, _)" autoComplete="username" required />
-            )}
-            <Input name="email" type="email" placeholder="Email" autoComplete="email" required />
-            <Input
-              name="password"
-              type="password"
-              placeholder={mode === 'register' ? 'Parolă (min. 8 caractere)' : 'Parolă'}
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              minLength={mode === 'register' ? 8 : undefined}
-              required
-            />
-            <Button type="submit" disabled={busy} className="w-full">
-              {busy ? 'Se verifică…' : mode === 'login' ? 'Intră în cont' : 'Creează contul'}
-            </Button>
-          </form>
+        <div className="rise max-w-lg">
+          <p className="eyebrow mb-5">Steam · PlayStation · Xbox · Epic</p>
+          <h1 className="font-display font-extrabold tracking-[-0.03em] text-[68px] leading-[0.98]">
+            Fiecare trofeu,<br /><em className="bg-gradient-to-r from-[#ffe2a6] to-[#ffa8cf] bg-clip-text not-italic text-transparent">într-un singur loc.</em>
+          </h1>
+          <p className="mt-6 max-w-md leading-relaxed text-muted">
+            Leagă-ți conturile, iar biblioteca și achievement-urile se sincronizează într-un profil unificat,
+            cu raritate, clasamente și prieteni.
+          </p>
+        </div>
 
-          <div className="my-4 flex items-center gap-3 text-xs text-white/40">
-            <span className="h-px flex-1 bg-white/15" /> sau <span className="h-px flex-1 bg-white/15" />
+        <ScoringScale />
+      </aside>
+
+      {/* Dreapta: formularul */}
+      <main className="flex items-center justify-center px-5 py-12 lg:pr-12">
+        <div className="panel rise w-full max-w-[420px] rounded-[32px] p-6 sm:p-8">
+          <div className="mb-10 lg:hidden">
+            <Logo size={40} />
+            <h1 className="mt-6 font-display font-extrabold tracking-[-0.03em] text-[44px] leading-none">
+              Fiecare trofeu, <em className="bg-gradient-to-r from-[#ffe2a6] to-[#ffa8cf] bg-clip-text not-italic text-transparent">într-un singur loc.</em>
+            </h1>
           </div>
-          <a href={steamLoginUrl} className="pressable glass flex min-h-11 items-center justify-center gap-2 rounded-full text-sm font-semibold hover:bg-white/15">
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
+
+          <h2 className="text-xl font-semibold tracking-tight">{mode === 'login' ? 'Bine ai revenit' : 'Creează-ți contul'}</h2>
+          <p className="mt-1 mb-7 text-sm text-muted">
+            {mode === 'login' ? 'Intră cu emailul sau direct cu Steam.' : 'Durează câteva secunde. Platformele le legi după.'}
+          </p>
+
+          <a
+            href={steamLoginUrl}
+            className="pressable flex min-h-11 items-center justify-center gap-2.5 rounded-lg border border-line-strong bg-raised text-sm font-medium hover:border-white/20 hover:bg-hover"
+          >
+            <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="currentColor" aria-hidden>
               <path d="M12 2a10 10 0 0 0-9.96 9.04l5.35 2.21a2.83 2.83 0 0 1 1.6-.49l2.39-3.46v-.05a3.78 3.78 0 1 1 3.78 3.78h-.09l-3.4 2.43a2.84 2.84 0 0 1-5.62.56L2.2 14.4A10 10 0 1 0 12 2Zm-3.73 15.17-1.22-.5a2.13 2.13 0 1 0 1.16-2.91l1.27.52a1.57 1.57 0 1 1-1.21 2.9Zm9.45-7.84a2.52 2.52 0 1 0-2.52 2.52 2.52 2.52 0 0 0 2.52-2.52Zm-4.4 0a1.89 1.89 0 1 1 1.89 1.89 1.89 1.89 0 0 1-1.9-1.89Z" />
             </svg>
             Continuă cu Steam
           </a>
+
+          <div className="my-6 flex items-center gap-3">
+            <span className="h-px flex-1 bg-line" /><span className="eyebrow">sau cu email</span><span className="h-px flex-1 bg-line" />
+          </div>
+
+          <Segmented options={modes} value={mode} onChange={(value) => { setMode(value); setError(null); }} className="mb-5" />
+          <ErrorMessage error={error} />
+          <form onSubmit={submit} className="space-y-4">
+            {mode === 'register' && (
+              <Field label="Username" hint="3–32: litere, cifre, _">
+                <Input name="username" autoComplete="username" required />
+              </Field>
+            )}
+            <Field label="Email">
+              <Input name="email" type="email" autoComplete="email" required />
+            </Field>
+            <Field label="Parolă" hint={mode === 'register' ? 'min. 8 caractere' : undefined}>
+              <Input
+                name="password"
+                type="password"
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                minLength={mode === 'register' ? 8 : undefined}
+                required
+              />
+            </Field>
+            <Button type="submit" disabled={busy} className="mt-2 w-full !min-h-11">
+              {busy ? 'Se verifică…' : mode === 'login' ? 'Intră în cont' : 'Creează contul'}
+            </Button>
+          </form>
         </div>
-      </div>
+      </main>
+    </div>
+  );
+}
+
+// Scala de punctaj a clasamentului (view-ul din 008) și pragurile rarității (coloana generată din 003).
+const scale = [
+  { rarity: 'ultra_rare', points: 50, share: '< 1%' },
+  { rarity: 'very_rare', points: 20, share: '1–5%' },
+  { rarity: 'rare', points: 5, share: '5–20%' },
+  { rarity: 'common', points: 1, share: '≥ 20%' },
+] as const;
+
+function ScoringScale() {
+  return (
+    <div>
+      <p className="eyebrow mb-4">Cum se punctează</p>
+      <ul className="grid grid-cols-4 gap-px overflow-hidden rounded-xl glass-grid">
+        {scale.map(({ rarity, points, share }) => (
+          <li key={rarity} className="bg-surface px-4 py-4">
+            <p className={`num text-3xl ${rarityStyles[rarity].text}`}>{points}</p>
+            <p className="mt-2 text-xs font-medium text-fg">{rarityStyles[rarity].label}</p>
+            <p className="num mt-0.5 text-[11px] text-faint">{share} jucători</p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -112,14 +172,15 @@ export function AuthCallbackPage() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
-      <div className="glass max-w-sm rounded-[28px] p-6 text-center">
+      <div className="panel w-full max-w-sm rounded-2xl p-8 text-center">
+        <div className="mb-5 flex justify-center"><Logo size={36} /></div>
         {error ? (
           <>
-            <p className="mb-4 text-red-200">{error}</p>
+            <p className="mb-5 text-sm text-[#ffb4b4]">{error}</p>
             <Button onClick={() => navigate(user ? `/users/${user.id}` : '/login')}>{user ? 'Înapoi la profil' : 'Înapoi la login'}</Button>
           </>
         ) : (
-          <p className="text-white/70">Te conectăm…</p>
+          <p className="text-sm text-muted">Te conectăm…</p>
         )}
       </div>
     </div>

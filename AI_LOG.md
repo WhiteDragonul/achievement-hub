@@ -139,3 +139,15 @@ jocurile. să-mi pot da customize la profil.” (plus o captură: sync-ul rămâ
 **Prompt:** „dă-i commit, push pe GitHub și după fă GitHub Pages ca să pot accesa și de pe telefon pentru prezentare.”
 **Rezultat:** commit + push; repo public; Pages activat (workflow); CORS în API (`@fastify/cors`, test nou); router cu
 `basename`; `scripts/present.mjs` (tunel Cloudflare → `API_URL` → redeploy Pages → API + worker). Decizie D48.
+
+## Interfață „Sunset Glass” (2026-11-18)
+**Prompt:** „vreau să folosești skill-urile pe care le ai să faci o interfață premium [...] lucrată cu pasiune”, apoi
+„liquid glass cu font Roboto [...] inspirat full liquid glass în theme de GTA 6 Leonida” și „fontul să fie Roboto bold”.
+**Rezultat:** sistem de design nou în `web/src/index.css` (tokenuri semantice, utilitare `panel`, `glass-bar`, `glass-pill`,
+`glass-grid`, `sunset`, `eyebrow`, `num`); scenă de apus desenată (CSS + SVG, original); componente noi în `ui.tsx`
+(`Icon`, `Field`, `SectionTitle`, `Empty`, `Pager`, încărcare schelet); toate paginile refăcute: login în două coloane cu
+scala de punctaj, podium în clasament, rezumat de raritate pe joc, profil cu cifre și vitrină, prieteni cu căutare laterală,
+admin cu raportări lizibile. Etichete vizibile pe câmpuri, focus vizibil, fără emoji ca iconițe. Decizie D49.
+**Verificat:** `npm run build`; în browser (desktop 1440 și mobil 375) cu un API simulat local (DB-ul local nu rula),
+toate paginile, fără erori în consolă.
+**Neverificat:** cu API-ul și datele reale; în shell-ul Tauri.

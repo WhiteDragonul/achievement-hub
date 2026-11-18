@@ -1,171 +1,247 @@
 @import "tailwindcss";
 
 /* ----------------------------------------------------------------------------
-   Liquid Glass (D42): suprafețe translucide care lasă să se vadă fundalul colorat de dedesubt.
-   Efectul vine din trei lucruri combinate:
-     1. backdrop-filter: blur + saturate: „sticla” estompează și intensifică ce e în spate;
-     2. o margine subțire luminoasă + umbre interioare: grosimea și reflexia marginii sticlei;
-     3. un reflex (::before) în colțul de sus: lumina care cade pe suprafață.
-   Toate clasele de mai jos sunt utilitare Tailwind (@utility), folosite ca orice altă clasă.
+   Stilul „Sunset Glass” (D49): liquid glass peste un apus de coastă tropicală (palmieri, ocean, soare la orizont).
+   - Scena din spate (componenta <Scene>, în Layout.tsx) e desenată în CSS + SVG: cer în degrade, soare, ocean, palmieri.
+     Sticla are nevoie de ceva colorat în spate ca să „lucreze”: blur-ul și saturația o fac să preia culorile apusului.
+   - Suprafețele (panel, glass-bar, glass-pill, glass-grid) sunt translucide: blur + saturate, margine luminoasă,
+     reflex de lumină pe muchia de sus.
+   - Culoarea de accent e apusul: roz → portocaliu. Auriul rămâne pentru trofee (locul 1, ultra rar, 100%).
+   - Fontul: Roboto (variabil, inclus în aplicație: merge și offline în Tauri). Titluri și cifre bold/extra-bold,
+     text de interfață medium. Cifrele: Roboto Mono.
    ---------------------------------------------------------------------------- */
 
+@import "@fontsource-variable/roboto";
+@import "@fontsource-variable/roboto-mono";
+
 @theme {
-  /* Culorile rarității, folosite ca bg-rarity-*, text-rarity-* etc. */
-  --color-rarity-ultra: #ffc53d;
-  --color-rarity-very: #c18cff;
-  --color-rarity-rare: #5ab8ff;
-  --color-rarity-common: #a3adbf;
+  --font-sans: "Roboto Variable", Roboto, -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Roboto Mono Variable", "Roboto Mono", ui-monospace, Menlo, monospace;
+  --font-display: "Roboto Variable", Roboto, system-ui, sans-serif;
 
-  --color-accent: #7aa8ff;
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI Variable Display",
-    "Segoe UI", Inter, Roboto, system-ui, sans-serif;
+  /* „Cerneala”: culoarea cea mai închisă (text pe butonul principal, tente de umbră). */
+  --color-ink: #160a26;
+  /* Suprafețe translucide: tente închise peste scenă (sticla le adaugă blur). */
+  --color-surface: rgb(22 10 44 / 0.34);
+  --color-raised: rgb(255 255 255 / 0.09);
+  --color-hover: rgb(255 255 255 / 0.14);
+  --color-line: rgb(255 255 255 / 0.14);
+  --color-line-strong: rgb(255 255 255 / 0.24);
 
-  /* Curbă „cu arc”, ca animațiile iOS: depășește puțin ținta și revine. */
-  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  /* Text pe sticlă: alb, alb estompat, alb mai estompat. */
+  --color-fg: #fff8f4;
+  --color-muted: rgb(255 240 235 / 0.78);
+  --color-faint: rgb(255 236 230 / 0.58);
+
+  /* Apusul: accentul aplicației. */
+  --color-sunset-pink: #ff5fa2;
+  --color-sunset-orange: #ffa45c;
+  --color-sea: #3fe0d0;
+
+  /* Trofee + raritate. */
+  --color-gold: #ffd479;
+  --color-silver: #e4e7f0;
+  --color-bronze: #f0a877;
+  --color-rarity-ultra: #ffd479;
+  --color-rarity-very: #d6a6ff;
+  --color-rarity-rare: #7fd8ff;
+  --color-rarity-common: rgb(255 240 235 / 0.7);
+
+  --color-danger: #ff7a85;
+  --color-success: #6ff0b8;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
   color-scheme: dark;
-  /* Un strat alb foarte transparent peste o tentă închisă: sticla luminează fundalul, dar textul rămâne lizibil. */
-  --glass-bg: linear-gradient(145deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.04)), rgb(12 14 30 / 0.28);
-  --glass-border: rgb(255 255 255 / 0.16);
-  --glass-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.32),
-    inset 0 -1px 0 rgb(255 255 255 / 0.05),
-    inset 0 0 24px rgb(255 255 255 / 0.03),
-    0 12px 40px -12px rgb(0 0 0 / 0.55);
 }
 
-/* Fundalul stă pe body (nu pe html), ca stratul .aurora (z-index -1) să fie desenat deasupra lui. */
 body {
-  @apply min-h-dvh font-sans text-white/95 antialiased;
-  background:
-    radial-gradient(1200px 800px at 10% -10%, rgb(76 92 255 / 0.28), transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, rgb(255 80 170 / 0.18), transparent 60%),
-    radial-gradient(1000px 900px at 50% 120%, rgb(0 200 255 / 0.16), transparent 60%),
-    #070912;
-  background-attachment: fixed;
+  @apply min-h-dvh font-sans text-fg antialiased;
+  font-weight: 500;
+  background: #1a0b2e; /* culoarea de bază, sub scenă (vizibilă doar o clipă, la încărcare) */
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Fundalul „viu”: trei pete de culoare care se mișcă încet în spatele sticlei. */
-.aurora {
+/* Textul de pe sticlă primește o umbră foarte fină: rămâne lizibil și peste zonele luminoase ale apusului. */
+main, aside, header, nav {
+  text-shadow: 0 1px 2px rgb(20 6 40 / 0.25);
+}
+
+:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 0.9);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* ---------------------------------------------------------------- Scena (fundalul) */
+.scene {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
+  /* Cerul: noapte sus, magenta, apoi portocaliul orizontului; oceanul începe la 72%. */
+  background: linear-gradient(180deg,
+    #140a33 0%, #2b0f55 18%, #6a1a78 36%, #c42f78 52%, #f45d5a 63%, #ff9a52 70%, #ffc46b 72%,
+    #2a8fa0 72.2%, #1a5c7a 80%, #0e2f4f 100%);
 }
-.aurora span {
+/* Soarele: disc tăiat de benzi orizontale, așezat pe linia orizontului. */
+.scene-sun {
   position: absolute;
-  width: 42vmax;
-  height: 42vmax;
-  border-radius: 9999px;
-  filter: blur(60px);
-  opacity: 0.6;
-  mix-blend-mode: screen;
-  animation: drift 26s ease-in-out infinite alternate;
+  left: 50%;
+  top: 72%;
+  width: min(62vmin, 560px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -62%);
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff1a8 0%, #ffc265 40%, #ff7a5c 75%, #ff4f8b 100%);
+  /* Benzile: o mască cu dungi tot mai groase spre bază. */
+  mask: linear-gradient(180deg, #000 52%, transparent 52% 55%, #000 55% 62%, transparent 62% 66%, #000 66% 72%,
+    transparent 72% 77%, #000 77% 83%, transparent 83% 89%, #000 89% 100%);
+  -webkit-mask: linear-gradient(180deg, #000 52%, transparent 52% 55%, #000 55% 62%, transparent 62% 66%, #000 66% 72%,
+    transparent 72% 77%, #000 77% 83%, transparent 83% 89%, #000 89% 100%);
+  filter: drop-shadow(0 0 60px rgb(255 120 90 / 0.65));
 }
-.aurora span:nth-child(1) { background: radial-gradient(circle, #4f6bff, #2d3bd6 60%, transparent 70%); top: -10vmax; left: -8vmax; }
-.aurora span:nth-child(2) { background: radial-gradient(circle, #ff4fb8, #a3249a 60%, transparent 70%); top: 25%; right: -14vmax; animation-duration: 32s; animation-delay: -8s; }
-.aurora span:nth-child(3) { background: radial-gradient(circle, #19d3f5, #0b7ea3 60%, transparent 70%); bottom: -16vmax; left: 20%; animation-duration: 38s; animation-delay: -16s; }
-.aurora span:nth-child(4) { background: radial-gradient(circle, #ffb547, #c2560f 60%, transparent 70%); top: 40%; left: -12vmax; width: 26vmax; height: 26vmax; opacity: 0.45; animation-duration: 44s; animation-delay: -4s; }
-
-@keyframes drift {
-  0% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(6vmax, 4vmax) scale(1.12); }
-  100% { transform: translate(-4vmax, 8vmax) scale(0.92); }
+/* Reflexia soarelui pe apă: o coloană de linii luminoase care sclipesc încet. */
+.scene-glint {
+  position: absolute;
+  left: 50%;
+  top: 72.4%;
+  bottom: 0;
+  width: min(44vmin, 400px);
+  transform: translateX(-50%);
+  background: repeating-linear-gradient(180deg, rgb(255 200 140 / 0.55) 0 2px, transparent 2px 9px);
+  mask: radial-gradient(60% 100% at 50% 0%, #000 20%, transparent 75%);
+  -webkit-mask: radial-gradient(60% 100% at 50% 0%, #000 20%, transparent 75%);
+  animation: glint 6s ease-in-out infinite alternate;
+}
+@keyframes glint {
+  from { opacity: 0.55; transform: translateX(-50%) scaleX(0.92); }
+  to { opacity: 0.9; transform: translateX(-50%) scaleX(1.06); }
+}
+.scene-palms {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 100%;
+  width: 100%;
+  color: #12061f;
+}
+/* Voalul de lizibilitate: întunecă puțin scena, mai mult sus (unde stă textul). */
+.scene::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(14 6 30 / 0.42), rgb(14 6 30 / 0.1) 55%, rgb(14 6 30 / 0.35));
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .aurora span { animation: none; }
-  * { transition-duration: 0.01ms !important; }
-}
+/* ---------------------------------------------------------------- Sticla */
 
-/* Suprafața de bază: carduri, panouri. */
-@utility glass {
+/* Panoul de bază (carduri, liste). */
+@utility panel {
   position: relative;
   isolation: isolate;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  -webkit-backdrop-filter: blur(24px) saturate(170%);
-  backdrop-filter: blur(24px) saturate(170%);
-
-  /* Reflexul de lumină din colțul stânga-sus; urmează colțurile rotunjite ale elementului. */
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    pointer-events: none;
-    background:
-      radial-gradient(120% 60% at 0% 0%, rgb(255 255 255 / 0.16), transparent 50%),
-      linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent 40%);
-  }
-}
-
-/* Variantă mai densă pentru bara de navigare: plutește peste conținut, deci trebuie să-l estompeze mai tare. */
-@utility glass-bar {
-  background: linear-gradient(160deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.06)), rgb(12 14 30 / 0.3);
-  border: 1px solid rgb(255 255 255 / 0.2);
+  background: linear-gradient(155deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.03) 45%), var(--color-surface);
+  border: 1px solid rgb(255 255 255 / 0.18);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    inset 0 1px 0 rgb(255 255 255 / 0.35),
     inset 0 -1px 0 rgb(255 255 255 / 0.06),
-    0 20px 50px -15px rgb(0 0 0 / 0.7);
-  -webkit-backdrop-filter: blur(32px) saturate(190%);
-  backdrop-filter: blur(32px) saturate(190%);
+    0 18px 50px -20px rgb(20 4 40 / 0.7);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  backdrop-filter: blur(26px) saturate(180%);
 }
 
-/* „Bula” care marchează elementul activ (tab, segment). */
+/* Grilă de celule despărțite de linii fine: containerul e sticlă, golurile de 1px dintre celule sunt liniile. */
+@utility glass-grid {
+  border: 1px solid rgb(255 255 255 / 0.18);
+  background: rgb(255 255 255 / 0.16);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 18px 50px -20px rgb(20 4 40 / 0.7);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  backdrop-filter: blur(26px) saturate(180%);
+}
+
+/* Bara de navigare: sticlă mai densă, plutește peste conținut. */
+@utility glass-bar {
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0.05)), rgb(26 10 48 / 0.42);
+  border: 1px solid rgb(255 255 255 / 0.22);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.42),
+    0 24px 60px -18px rgb(16 4 36 / 0.75);
+  -webkit-backdrop-filter: blur(34px) saturate(190%);
+  backdrop-filter: blur(34px) saturate(190%);
+}
+
+/* „Bula” elementului activ (tab, segment). */
 @utility glass-pill {
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.24), rgb(255 255 255 / 0.1));
-  border: 1px solid rgb(255 255 255 / 0.28);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.55),
-    inset 0 -2px 6px rgb(0 0 0 / 0.12),
-    0 6px 18px -6px rgb(0 0 0 / 0.5);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.3), rgb(255 255 255 / 0.1));
+  border: 1px solid rgb(255 255 255 / 0.34);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6), inset 0 -2px 6px rgb(40 0 60 / 0.15), 0 6px 18px -6px rgb(20 4 40 / 0.6);
 }
 
-/* Câmpuri de formular: sticlă adâncită (umbra e în interior, nu în afară). */
-@utility glass-field {
-  background: rgb(0 0 0 / 0.22);
-  border: 1px solid rgb(255 255 255 / 0.12);
-  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.35), 0 1px 0 rgb(255 255 255 / 0.06);
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-
-  &:focus {
-    border-color: rgb(122 168 255 / 0.7);
-    background: rgb(0 0 0 / 0.3);
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.35), 0 0 0 4px rgb(122 168 255 / 0.18);
-  }
-}
-
-/* Butonul principal: sticlă colorată (tint albastru-violet), cu același reflex ca restul. */
-@utility glass-tint {
+/* Butonul principal: „sticlă” colorată în apus, cu reflex sus. */
+@utility sunset {
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.28), rgb(255 255 255 / 0) 55%),
-    linear-gradient(135deg, #5b7cff, #8b5cf6);
-  border: 1px solid rgb(255 255 255 / 0.3);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.5),
-    0 8px 24px -8px rgb(99 102 241 / 0.75);
+    linear-gradient(180deg, rgb(255 255 255 / 0.45), rgb(255 255 255 / 0) 55%),
+    linear-gradient(120deg, var(--color-sunset-pink), var(--color-sunset-orange));
+  border: 1px solid rgb(255 255 255 / 0.45);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), 0 10px 28px -10px rgb(255 95 140 / 0.85);
+  text-shadow: none;
 }
 
-/* Apăsare: elementul se „scufundă” puțin și revine cu arc. */
+/* Etichetă mică, majuscule, spațiere largă. */
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
 @utility pressable {
-  transition: transform 0.35s var(--ease-spring), background 0.2s, box-shadow 0.2s, opacity 0.2s;
+  transition: transform 220ms cubic-bezier(0.34, 1.4, 0.64, 1), background-color 160ms, border-color 160ms, color 160ms, opacity 160ms, filter 160ms;
   &:active:not(:disabled) {
     transform: scale(0.96);
   }
 }
 
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@utility rise {
+  animation: rise 360ms var(--ease-out-soft) backwards; /* backwards: după final nu rămâne niciun transform (altfel blur-ul sticlei din interior se oprește) */
+}
+
+@keyframes fill {
+  from { transform: scaleX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 select option {
-  background: #161a2b;
-  color: white;
+  background: #2a1145;
+  color: var(--color-fg);
 }
 
 ::selection {
-  background: rgb(122 168 255 / 0.4);
+  background: rgb(255 95 162 / 0.45);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.2) transparent;
 }

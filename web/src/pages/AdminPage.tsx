@@ -5,7 +5,7 @@ import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, download, type Platform, type Report, type Role, type User } from '../api';
 import { useCurrentUser } from '../auth';
-import { Button, Card, ErrorMessage, Input, Loading, PageTitle, Segmented, Select } from '../components/ui';
+import { Avatar, Button, Card, Empty, ErrorMessage, Field, Icon, Input, Loading, PageTitle, SectionTitle, Segmented, Select } from '../components/ui';
 
 type Tab = 'reports' | 'users' | 'platforms';
 
@@ -21,17 +21,18 @@ export function AdminPage() {
   return (
     <>
       <PageTitle
-        subtitle={isAdmin ? 'Moderare și administrare' : 'Moderare'}
+        eyebrow={isAdmin ? 'Administrator' : 'Moderator'}
+        subtitle={isAdmin ? 'Raportări, conturi și platforme. Fiecare acțiune e verificată și de API (403).' : 'Raportări și conturi. Fiecare acțiune e verificată și de API (403).'}
         actions={
           <Button variant="secondary" onClick={() => download('/exports/overview.pdf', 'raport-achievement-hub.pdf').catch(setError)}>
-            Raport PDF
+            <Icon name="download" className="h-4 w-4" /> Raport PDF
           </Button>
         }
       >
-        Admin
+        Administrare
       </PageTitle>
       <ErrorMessage error={error} />
-      <Segmented options={tabs} value={tab} onChange={setTab} />
+      <Segmented options={tabs} value={tab} onChange={setTab} className="mb-8 max-w-md" />
       {tab === 'reports' && <ReportsSection />}
       {tab === 'users' && <UsersSection />}
       {tab === 'platforms' && <PlatformsSection />}
@@ -59,7 +60,7 @@ function ReportsSection() {
 
   return (
     <>
-      <Select value={status} onChange={(event) => setStatus(event.target.value)} className="mb-4">
+      <Select value={status} onChange={(event) => setStatus(event.target.value)} className="mb-5 w-48" aria-label="Starea raportărilor">
         <option value="open">Deschise</option>
         <option value="resolved">Rezolvate</option>
         <option value="rejected">Respinse</option>
@@ -68,27 +69,30 @@ function ReportsSection() {
       {reports.isPending ? <Loading /> : (
         <div className="space-y-3">
           {reports.data?.map((report) => (
-            <Card key={report.id}>
-              <p className="text-sm">
-                <Link to={`/users/${report.reporter_id}`} className="text-sky-300">@{report.reporter_username}</Link>
-                {' a raportat pe '}
-                <Link to={`/users/${report.target_user_id}`} className="text-sky-300">@{report.target_username}</Link>
-              </p>
-              <p className="mt-1 text-white/75">„{report.reason}”</p>
-              <p className="mt-1 text-xs text-white/40">
-                {new Date(report.created_at).toLocaleString('ro-RO')}
-                {report.resolution_note && ` · ${report.resolution_note}`}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
+            <Card key={report.id} className="!p-0">
+              <div className="px-5 pt-5">
+                <p className="eyebrow mb-3 flex flex-wrap gap-x-3">
+                  <span>#{report.id}</span>
+                  <span>{new Date(report.created_at).toLocaleString('ro-RO', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                </p>
+                <p className="text-sm text-muted">
+                  <Link to={`/users/${report.reporter_id}`} className="font-medium text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">@{report.reporter_username}</Link>
+                  {' a raportat pe '}
+                  <Link to={`/users/${report.target_user_id}`} className="font-medium text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">@{report.target_username}</Link>
+                </p>
+                <blockquote className="mt-3 border-l-2 border-gold/50 pl-4 font-display font-extrabold tracking-[-0.03em] text-xl leading-snug text-fg">„{report.reason}”</blockquote>
+                {report.resolution_note && <p className="mt-3 text-xs text-faint">Notă: {report.resolution_note}</p>}
+              </div>
+              <div className="mt-5 flex flex-wrap gap-2 border-t border-line px-5 py-3">
                 {report.status === 'open' && (
                   <>
-                    <Button onClick={() => mutate.mutate({
+                    <Button size="sm" onClick={() => mutate.mutate({
                       path: `/reports/${report.id}`, method: 'PATCH',
                       body: { status: 'resolved', resolution_note: 'Utilizator ascuns din clasamente.' },
                     })}>
                       Rezolvă (ascunde userul)
                     </Button>
-                    <Button variant="secondary" onClick={() => mutate.mutate({
+                    <Button size="sm" variant="secondary" onClick={() => mutate.mutate({
                       path: `/reports/${report.id}`, method: 'PATCH',
                       body: { status: 'rejected', resolution_note: 'Nu am găsit dovezi.' },
                     })}>
@@ -97,12 +101,12 @@ function ReportsSection() {
                   </>
                 )}
                 {isAdmin && (
-                  <Button variant="danger" onClick={() => mutate.mutate({ path: `/reports/${report.id}`, method: 'DELETE' })}>Șterge</Button>
+                  <Button size="sm" variant="ghost" className="ml-auto hover:!text-danger" onClick={() => mutate.mutate({ path: `/reports/${report.id}`, method: 'DELETE' })}>Șterge</Button>
                 )}
               </div>
             </Card>
           ))}
-          {reports.data?.length === 0 && <p className="text-sm text-white/55">Nicio raportare.</p>}
+          {reports.data?.length === 0 && <div className="panel rounded-3xl"><Empty icon="flag" title="Nicio raportare">Nu e nimic de moderat în această categorie.</Empty></div>}
         </div>
       )}
     </>
@@ -135,35 +139,49 @@ function UsersSection() {
 
   return (
     <>
-      {isAdmin && <Card className="mb-4">
-        <h2 className="mb-3 font-semibold">Utilizator nou</h2>
-        <form onSubmit={createUser} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto_auto]">
-          <Input name="username" placeholder="Username" required />
-          <Input name="email" placeholder="Email" type="email" />
-          <Input name="password" placeholder="Parolă (min. 8)" type="password" />
-          <Select name="role" defaultValue="user">
-            <option value="user">user</option>
-            <option value="moderator">moderator</option>
-            <option value="admin">admin</option>
-          </Select>
-          <Button type="submit">Creează</Button>
+      {isAdmin && <Card className="mb-8">
+        <SectionTitle>Utilizator nou</SectionTitle>
+        <form onSubmit={createUser} className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_9rem_auto]">
+          <Field label="Username"><Input name="username" required /></Field>
+          <Field label="Email"><Input name="email" type="email" /></Field>
+          <Field label="Parolă" hint="min. 8"><Input name="password" type="password" autoComplete="new-password" /></Field>
+          <Field label="Rol">
+            <Select name="role" defaultValue="user">
+              <option value="user">user</option>
+              <option value="moderator">moderator</option>
+              <option value="admin">admin</option>
+            </Select>
+          </Field>
+          <Button type="submit" className="!min-h-11">Creează</Button>
         </form>
       </Card>}
 
-      <Input placeholder="Caută după username…" value={search} onChange={(event) => setSearch(event.target.value)} className="mb-4" />
+      <div className="relative mb-5 max-w-sm">
+        <Icon name="search" className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-faint" />
+        <Input type="search" aria-label="Caută după username" placeholder="Caută după username" value={search} onChange={(event) => setSearch(event.target.value)} className="!pl-10" />
+      </div>
       <ErrorMessage error={users.error ?? mutate.error} />
 
       {users.isPending ? <Loading /> : (
-        <Card className="p-0">
-          <ul className="divide-y divide-white/10">
+        <Card className="!p-0">
+          <ul>
             {users.data?.map((user) => (
-              <li key={user.id} className="flex flex-wrap items-center gap-2 px-4 py-3">
-                <Link to={`/users/${user.id}`} className="min-w-0 flex-1">
-                  <p className="truncate font-medium">@{user.username}</p>
-                  <p className="truncate text-xs text-white/55">#{user.id} · {user.email ?? 'fără email'}</p>
+              <li key={user.id} className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3 last:border-b-0 sm:px-5">
+                <Link to={`/users/${user.id}`} className="group flex min-w-0 flex-1 basis-56 items-center gap-3">
+                  <Avatar name={user.display_name ?? user.username} url={user.avatar_url} size={34} />
+                  <span className="min-w-0">
+                    <span className="flex items-center gap-2 truncate text-sm font-medium group-hover:text-white">
+                      @{user.username}
+                      {user.is_banned && <span className="eyebrow !text-danger">banat</span>}
+                      {user.hidden_from_leaderboards && <span className="eyebrow">ascuns</span>}
+                    </span>
+                    <span className="num block truncate text-[11px] text-faint">#{user.id} · {user.email ?? 'fără email'}</span>
+                  </span>
                 </Link>
                 {isAdmin ? (
                   <Select
+                    aria-label={`Rolul lui ${user.username}`}
+                    className="w-36"
                     value={user.role}
                     onChange={(event) => mutate.mutate({ path: `/users/${user.id}`, method: 'PATCH', body: { role: event.target.value as Role } })}
                   >
@@ -172,16 +190,16 @@ function UsersSection() {
                     <option value="admin">admin</option>
                   </Select>
                 ) : (
-                  <span className="glass-pill rounded-full px-3 py-1 text-xs font-semibold">{user.role}</span>
+                  <span className="eyebrow rounded-md border border-line px-2 py-1">{user.role}</span>
                 )}
-                <Button variant="secondary" onClick={() => mutate.mutate({ path: `/users/${user.id}`, method: 'PATCH', body: { is_banned: !user.is_banned } })}>
+                <Button size="sm" variant="secondary" onClick={() => mutate.mutate({ path: `/users/${user.id}`, method: 'PATCH', body: { is_banned: !user.is_banned } })}>
                   {user.is_banned ? 'Debanează' : 'Banează'}
                 </Button>
-                <Button variant="secondary" onClick={() => mutate.mutate({ path: `/users/${user.id}`, method: 'PATCH', body: { hidden_from_leaderboards: !user.hidden_from_leaderboards } })}>
-                  {user.hidden_from_leaderboards ? 'Arată în clasament' : 'Ascunde din clasament'}
+                <Button size="sm" variant="secondary" onClick={() => mutate.mutate({ path: `/users/${user.id}`, method: 'PATCH', body: { hidden_from_leaderboards: !user.hidden_from_leaderboards } })}>
+                  {user.hidden_from_leaderboards ? 'Arată în clasament' : 'Ascunde'}
                 </Button>
                 {isAdmin && (
-                  <Button variant="danger" onClick={() => confirm(`Ștergi @${user.username} cu tot cu datele lui?`) && mutate.mutate({ path: `/users/${user.id}`, method: 'DELETE' })}>
+                  <Button size="sm" variant="ghost" className="hover:!text-danger" onClick={() => confirm(`Ștergi @${user.username} cu tot cu datele lui?`) && mutate.mutate({ path: `/users/${user.id}`, method: 'DELETE' })}>
                     Șterge
                   </Button>
                 )}
@@ -208,34 +226,36 @@ function PlatformsSection() {
   return (
     <>
       <ErrorMessage error={platforms.error ?? mutate.error} />
-      <Card className="mb-4 p-0">
-        <ul className="divide-y divide-white/10">
+      <Card className="mb-3 !p-0">
+        <ul>
           {platforms.data?.map((platform) => (
-            <li key={platform.id} className="flex flex-wrap items-center gap-2 px-4 py-3">
-              <span className="w-16 font-mono text-sm text-white/55">{platform.code}</span>
+            <li key={platform.id} className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3 last:border-b-0 sm:px-5">
+              <span className="num w-16 text-sm text-muted">{platform.code}</span>
               <Input
+                aria-label={`Numele platformei ${platform.code}`}
                 defaultValue={platform.name}
                 className="max-w-xs flex-1"
                 onBlur={(event) => event.target.value !== platform.name &&
                   mutate.mutate({ path: `/platforms/${platform.id}`, method: 'PATCH', body: { name: event.target.value } })}
               />
-              <Button variant="secondary" onClick={() => mutate.mutate({ path: `/platforms/${platform.id}`, method: 'PATCH', body: { is_mock: !platform.is_mock } })}>
+              <Button size="sm" variant="secondary" title="Comută între provider real și mock" onClick={() => mutate.mutate({ path: `/platforms/${platform.id}`, method: 'PATCH', body: { is_mock: !platform.is_mock } })}>
+                <span className={`h-1.5 w-1.5 rounded-full ${platform.is_mock ? 'bg-faint' : 'bg-success'}`} />
                 {platform.is_mock ? 'Mock' : 'Real'}
               </Button>
-              <Button variant="danger" onClick={() => mutate.mutate({ path: `/platforms/${platform.id}`, method: 'DELETE' })}>Șterge</Button>
+              <Button size="sm" variant="ghost" className="hover:!text-danger" onClick={() => mutate.mutate({ path: `/platforms/${platform.id}`, method: 'DELETE' })}>Șterge</Button>
             </li>
           ))}
         </ul>
       </Card>
-      <p className="mb-4 text-xs text-white/40">
+      <p className="mb-8 text-xs text-faint">
         O platformă cu conturi sau jocuri nu poate fi ștearsă (ON DELETE RESTRICT): încearcă și vezi eroarea din baza de date.
       </p>
       <Card>
-        <h2 className="mb-3 font-semibold">Platformă nouă</h2>
-        <form onSubmit={createPlatform} className="grid gap-3 sm:grid-cols-[1fr_2fr_auto]">
-          <Input name="code" placeholder="cod (ex. gog)" required />
-          <Input name="name" placeholder="Nume" required />
-          <Button type="submit">Adaugă</Button>
+        <SectionTitle>Platformă nouă</SectionTitle>
+        <form onSubmit={createPlatform} className="grid items-end gap-3 sm:grid-cols-[1fr_2fr_auto]">
+          <Field label="Cod"><Input name="code" placeholder="ex. gog" required /></Field>
+          <Field label="Nume"><Input name="name" required /></Field>
+          <Button type="submit" className="!min-h-11">Adaugă</Button>
         </form>
       </Card>
     </>

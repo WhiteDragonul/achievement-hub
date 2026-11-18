@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type Game, type Platform } from '../api';
 import { useCurrentUser } from '../auth';
-import { Button, Card, ErrorMessage, Input, Loading, PageTitle, PlatformBadge, Select } from '../components/ui';
+import { Button, Card, Empty, ErrorMessage, Field, Icon, Input, Loading, PageTitle, Pager, PlatformBadge, SectionTitle, Select } from '../components/ui';
 
 const PAGE_SIZE = 24;
 
@@ -45,58 +45,77 @@ export function GamesPage() {
 
   return (
     <>
-      <PageTitle subtitle="Catalogul de jocuri de pe toate platformele">Jocuri</PageTitle>
+      <PageTitle
+        eyebrow="Catalog"
+        subtitle="Toate jocurile cunoscute de pe platformele legate. Deschide unul ca să vezi achievement-urile și raritatea lor."
+        actions={isAdmin && (
+          <Button variant="secondary" onClick={() => setShowForm(!showForm)}>
+            <Icon name={showForm ? 'x' : 'plus'} className="h-4 w-4" /> {showForm ? 'Renunță' : 'Joc nou'}
+          </Button>
+        )}
+      >
+        Jocuri
+      </PageTitle>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Input
-          placeholder="Caută după titlu…"
-          value={search}
-          onChange={(event) => { setSearch(event.target.value); setPage(0); }}
-          className="min-w-48 flex-1 sm:max-w-xs"
-        />
-        <Select value={platformId} onChange={(event) => { setPlatformId(event.target.value); setPage(0); }}>
+      <div className="mb-6 flex flex-wrap gap-3">
+        <div className="relative min-w-56 flex-1 sm:max-w-sm">
+          <Icon name="search" className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-faint" />
+          <Input
+            type="search"
+            aria-label="Caută după titlu"
+            placeholder="Caută după titlu"
+            value={search}
+            onChange={(event) => { setSearch(event.target.value); setPage(0); }}
+            className="!pl-10"
+          />
+        </div>
+        <Select value={platformId} onChange={(event) => { setPlatformId(event.target.value); setPage(0); }} className="w-52">
           <option value="">Toate platformele</option>
           {platforms.data?.map((platform) => <option key={platform.id} value={platform.id}>{platform.name}</option>)}
         </Select>
-        {isAdmin && <Button variant="secondary" onClick={() => setShowForm(!showForm)}>+ Joc nou</Button>}
       </div>
 
       {showForm && (
-        <Card className="mb-4">
-          <form onSubmit={submit} className="grid gap-3 sm:grid-cols-[1fr_1fr_2fr_auto]">
-            <Select name="platform_id" required>
-              {platforms.data?.map((platform) => <option key={platform.id} value={platform.id}>{platform.name}</option>)}
-            </Select>
-            <Input name="external_id" placeholder="Id extern (ex. appid)" required />
-            <Input name="title" placeholder="Titlu" required />
-            <Button type="submit" disabled={createGame.isPending}>Salvează</Button>
+        <Card className="rise mb-6">
+          <SectionTitle>Adaugă în catalog</SectionTitle>
+          <form onSubmit={submit} className="grid items-end gap-3 sm:grid-cols-[1fr_1fr_2fr_auto]">
+            <Field label="Platformă">
+              <Select name="platform_id" required>
+                {platforms.data?.map((platform) => <option key={platform.id} value={platform.id}>{platform.name}</option>)}
+              </Select>
+            </Field>
+            <Field label="Id extern"><Input name="external_id" placeholder="ex. appid" required /></Field>
+            <Field label="Titlu"><Input name="title" required /></Field>
+            <Button type="submit" disabled={createGame.isPending} className="!min-h-11">Salvează</Button>
           </form>
-          <div className="mt-3"><ErrorMessage error={createGame.error} /></div>
+          <div className="mt-4"><ErrorMessage error={createGame.error} /></div>
         </Card>
       )}
 
       <ErrorMessage error={games.error} />
-      {games.isPending ? <Loading /> : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {games.isPending ? <Loading rows={6} /> : (
+        <ul className="grid gap-px overflow-hidden rounded-3xl glass-grid sm:grid-cols-2 lg:grid-cols-3">
           {games.data?.map((game) => (
-            <Link key={game.id} to={`/games/${game.id}`}>
-              <Card className="h-full transition hover:bg-white/10">
-                <PlatformBadge code={platformCode(game.platform_id)} />
-                <p className="mt-2 font-medium">{game.title}</p>
-                <p className="mt-1 font-mono text-xs text-white/40">{game.external_id}</p>
-              </Card>
-            </Link>
+            <li key={game.id} className="bg-surface">
+              <Link to={`/games/${game.id}`} className="group flex h-full min-h-28 flex-col justify-between gap-6 p-5 transition-colors hover:bg-raised">
+                <div className="flex items-center justify-between">
+                  <PlatformBadge code={platformCode(game.platform_id)} />
+                  <Icon name="arrowRight" className="h-4 w-4 -translate-x-1 text-faint opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                </div>
+                <div>
+                  <p className="line-clamp-2 font-medium leading-snug">{game.title}</p>
+                  <p className="num mt-1 text-[11px] text-faint">{game.external_id}</p>
+                </div>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
-      {games.data?.length === 0 && <p className="text-sm text-white/55">Niciun joc găsit.</p>}
+      {games.data?.length === 0 && (
+        <div className="panel rounded-3xl"><Empty icon="search" title="Niciun joc găsit">Încearcă alt titlu sau altă platformă.</Empty></div>
+      )}
 
-      <div className="mt-4 flex justify-between">
-        <Button variant="secondary" disabled={page === 0} onClick={() => setPage(page - 1)}>Înapoi</Button>
-        <Button variant="secondary" disabled={(games.data?.length ?? 0) < PAGE_SIZE} onClick={() => setPage(page + 1)}>
-          Următoarea
-        </Button>
-      </div>
+      <Pager page={page} hasNext={(games.data?.length ?? 0) === PAGE_SIZE} onChange={setPage} />
     </>
   );
 }

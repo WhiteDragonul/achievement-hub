@@ -276,3 +276,14 @@ rămân pe laptop; `scripts/present.mjs` pornește un „quick tunnel” Cloudfl
 publică, o pune în variabila de repo `API_URL` și republică frontend-ul. Alternativa (Render + Supabase) ar fi mers și cu
 laptopul închis, dar cere un cont nou și are pornire la rece de ~30 s. Fiind pe alt domeniu, API-ul acceptă acum CORS,
 doar de la originea din `WEB_URL` și de la Vite local. Pages gratuit cere repo public: `.env` (cheile) nu e în repo.
+
+**D49: Stilul „Sunset Glass”: liquid glass peste o scenă de apus tropical, font Roboto bold (înlocuiește D42).**
+Autorul a cerut o interfață mai lucrată: liquid glass complet, Roboto bold, atmosferă de apus pe coasta unui stat
+tropical fictiv (inspirație de atmosferă, fără nume, logo sau artă din vreun joc existent). Petele animate din D42 au fost
+înlocuite cu o scenă desenată (`<Scene>` în `Layout.tsx`): cer în degrade (CSS), soare cu benzi (mask), reflexia lui pe apă
+și palmieri (SVG). Sticla are nevoie de un fundal colorat ca blur-ul să aibă ce prelua. Tokenurile de culoare sunt semantice
+(`surface`, `line`, `fg`, `muted`, `gold`, `rarity-*`) în `index.css`, deci paginile nu conțin culori brute.
+Accentul e apusul (roz → portocaliu, butonul principal); auriul e rezervat trofeelor (locul 1, ultra rar, 100%); raritatea
+se arată cu punct colorat + text (nu doar culoare). Fonturile sunt incluse în aplicație (fontsource), ca să meargă offline în Tauri.
+Detaliu tehnic: un strămoș cu `transform` rămas după o animație (fill-mode `both`) oprește `backdrop-filter` în Chrome, deci
+animația de intrare (`rise`) folosește `backwards` și se aplică doar titlului paginii, nu lui `<main>`.

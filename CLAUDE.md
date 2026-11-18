@@ -54,6 +54,6 @@ Documentul de prezentare (`docs/prezentare.md`) se completează la fiecare etap�
 6. Susținere: prezentarea finală
 
 ## Stare curentă
-Etapele 0–5 gata, plus 3b (sync Steam/mock cu pg-boss) și UI „Liquid Glass” (D42). Load test k6 rulat
+Etapele 0–5 gata, plus 3b (sync Steam/mock cu pg-boss) și UI „Sunset Glass” (D49, înlocuiește D42). Load test k6 rulat
 (`docs/loadtest.md`). Doar date reale implicit (D45), conectare Steam prin OpenID (D47), profil personalizabil (009, D46).
 Rămase: 3c (Tauri), etapa 6 (prezentarea finală).

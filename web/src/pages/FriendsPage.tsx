@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type Friendship, type User } from '../api';
 import { useCurrentUser } from '../auth';
-import { Button, Card, ErrorMessage, Input, Loading, PageTitle } from '../components/ui';
+import { Avatar, Button, Card, Empty, ErrorMessage, Icon, Input, Loading, PageTitle, SectionTitle } from '../components/ui';
 
 export function FriendsPage() {
   const { userId } = useCurrentUser();
@@ -39,73 +39,115 @@ export function FriendsPage() {
 
   return (
     <>
-      <PageTitle subtitle={`${friends.length} prieteni`}>Prieteni</PageTitle>
+      <PageTitle eyebrow="Social" subtitle="Compară-ți progresul cu prietenii în clasamentul dedicat lor.">
+        Prieteni
+      </PageTitle>
       <ErrorMessage error={friendships.error ?? mutate.error} />
 
-      <Card className="mb-6">
-        <h2 className="mb-3 font-semibold">Adaugă un prieten</h2>
-        <Input placeholder="Caută după username…" value={search} onChange={(event) => setSearch(event.target.value)} />
-        <ul className="mt-2 divide-y divide-white/10">
-          {results.data?.filter((user) => user.id !== userId).map((user) => (
-            <li key={user.id} className="flex items-center justify-between py-2">
-              <span>@{user.username}</span>
-              <Button variant="secondary" onClick={() => mutate.mutate({ path: '/friendships', method: 'POST', body: { requester_id: userId, addressee_id: user.id } })}>
-                Trimite cerere
-              </Button>
-            </li>
-          ))}
-        </ul>
-      </Card>
+      <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
+        <div className="min-w-0">
+          {incoming.length > 0 && (
+            <Section title="Cereri primite" count={incoming.length} highlight>
+              {incoming.map((f) => (
+                <FriendRow key={pairPath(f)} {...other(f)} note="vrea să fiți prieteni">
+                  <Button size="sm" onClick={() => mutate.mutate({ path: pairPath(f), method: 'PATCH', body: { status: 'accepted' } })}>Acceptă</Button>
+                  <Button size="sm" variant="ghost" onClick={() => mutate.mutate({ path: pairPath(f), method: 'DELETE' })}>Refuză</Button>
+                </FriendRow>
+              ))}
+            </Section>
+          )}
 
-      {incoming.length > 0 && (
-        <Section title="Cereri primite">
-          {incoming.map((f) => (
-            <FriendRow key={pairPath(f)} {...other(f)}>
-              <Button onClick={() => mutate.mutate({ path: pairPath(f), method: 'PATCH', body: { status: 'accepted' } })}>Acceptă</Button>
-              <Button variant="danger" onClick={() => mutate.mutate({ path: pairPath(f), method: 'DELETE' })}>Refuză</Button>
-            </FriendRow>
-          ))}
-        </Section>
-      )}
+          <Section title="Prieteni" count={friends.length}>
+            {friends.map((f) => (
+              <FriendRow key={pairPath(f)} {...other(f)}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="hover:!text-danger"
+                  onClick={() => confirm('Ștergi prietenia?') && mutate.mutate({ path: pairPath(f), method: 'DELETE' })}
+                >
+                  Șterge
+                </Button>
+              </FriendRow>
+            ))}
+            {friends.length === 0 && (
+              <li><Empty icon="friends" title="Încă nu ai prieteni">Caută un jucător după username și trimite-i o cerere.</Empty></li>
+            )}
+          </Section>
 
-      {outgoing.length > 0 && (
-        <Section title="Cereri trimise">
-          {outgoing.map((f) => (
-            <FriendRow key={pairPath(f)} {...other(f)}>
-              <Button variant="secondary" onClick={() => mutate.mutate({ path: pairPath(f), method: 'DELETE' })}>Anulează</Button>
-            </FriendRow>
-          ))}
-        </Section>
-      )}
+          {outgoing.length > 0 && (
+            <Section title="Cereri trimise" count={outgoing.length}>
+              {outgoing.map((f) => (
+                <FriendRow key={pairPath(f)} {...other(f)} note="în așteptare">
+                  <Button size="sm" variant="ghost" onClick={() => mutate.mutate({ path: pairPath(f), method: 'DELETE' })}>Anulează</Button>
+                </FriendRow>
+              ))}
+            </Section>
+          )}
+        </div>
 
-      <Section title="Prieteni">
-        {friends.map((f) => (
-          <FriendRow key={pairPath(f)} {...other(f)}>
-            <Button variant="danger" onClick={() => confirm('Ștergi prietenia?') && mutate.mutate({ path: pairPath(f), method: 'DELETE' })}>
-              Șterge
-            </Button>
-          </FriendRow>
-        ))}
-        {friends.length === 0 && <p className="px-4 py-3 text-sm text-white/55">Încă nu ai prieteni.</p>}
-      </Section>
+        {/* Căutarea stă lângă listă pe desktop și deasupra ei pe telefon. */}
+        <aside className="order-first lg:order-none">
+          <Card className="lg:sticky lg:top-14">
+            <SectionTitle>Adaugă un prieten</SectionTitle>
+            <div className="relative">
+              <Icon name="search" className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-faint" />
+              <Input
+                type="search"
+                aria-label="Caută după username"
+                placeholder="username"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="!pl-10"
+              />
+            </div>
+            {search.length > 0 && search.length < 2 && <p className="mt-2 text-xs text-faint">Scrie cel puțin 2 caractere.</p>}
+            <ul className="mt-3 space-y-1">
+              {results.data?.filter((user) => user.id !== userId).map((user) => (
+                <li key={user.id} className="flex items-center gap-3 rounded-lg px-1 py-1.5">
+                  <Avatar name={user.display_name ?? user.username} url={user.avatar_url} size={30} />
+                  <span className="min-w-0 flex-1 truncate text-sm">@{user.username}</span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    aria-label={`Trimite cerere lui ${user.username}`}
+                    onClick={() => mutate.mutate({ path: '/friendships', method: 'POST', body: { requester_id: userId, addressee_id: user.id } })}
+                  >
+                    <Icon name="plus" className="h-4 w-4" />
+                  </Button>
+                </li>
+              ))}
+              {results.data && results.data.filter((user) => user.id !== userId).length === 0 && (
+                <li className="py-2 text-sm text-faint">Niciun jucător găsit.</li>
+              )}
+            </ul>
+          </Card>
+        </aside>
+      </div>
     </>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, count, highlight = false, children }: { title: string; count: number; highlight?: boolean; children: React.ReactNode }) {
   return (
-    <>
-      <h2 className="mb-3 text-lg font-semibold">{title}</h2>
-      <Card className="mb-6 p-0"><ul className="divide-y divide-white/10">{children}</ul></Card>
-    </>
+    <section className="mb-8">
+      <SectionTitle aside={count}>{title}</SectionTitle>
+      <ul className={`panel overflow-hidden rounded-3xl ${highlight ? '!border-gold/25' : ''}`}>{children}</ul>
+    </section>
   );
 }
 
-function FriendRow({ id, username, children }: { id: number; username: string; children: React.ReactNode }) {
+function FriendRow({ id, username, note, children }: { id: number; username: string; note?: string; children: React.ReactNode }) {
   return (
-    <li className="flex flex-wrap items-center gap-2 px-4 py-3">
-      <Link to={`/users/${id}`} className="flex-1 font-medium hover:text-sky-300">@{username}</Link>
-      {children}
+    <li className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0 sm:px-5">
+      <Link to={`/users/${id}`} className="group flex min-w-0 flex-1 items-center gap-3">
+        <Avatar name={username} size={36} />
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-medium group-hover:text-white">@{username}</span>
+          {note && <span className="block text-xs text-faint">{note}</span>}
+        </span>
+      </Link>
+      <div className="flex shrink-0 gap-1.5">{children}</div>
     </li>
   );
 }

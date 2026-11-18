@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './auth';
-import { Aurora, Layout } from './components/Layout';
+import { Layout, Scene } from './components/Layout';
 import { AuthCallbackPage, LoginPage } from './pages/LoginPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { GamesPage } from './pages/GamesPage';
@@ -23,7 +23,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Aurora />
+        <Scene />
         <BrowserRouter basename={import.meta.env.BASE_URL}>
           <Routes>
             <Route path="login" element={<LoginPage />} />
