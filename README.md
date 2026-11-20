@@ -3,8 +3,6 @@
 **One profile for all your gaming achievements.** Achievement Hub connects your Steam, PlayStation, Xbox and Epic accounts,
 syncs your games and trophies into a single unified profile, and lets you compare progress, rarity and rankings with friends.
 
-![Leaderboard](docs/img/clasament.jpg)
-
 > Academic project for the *Advanced Databases* course. The focus is on a clean relational model, indexing,
 > role-based access, and reports, built on PostgreSQL.
 
